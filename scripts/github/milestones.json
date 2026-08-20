@@ -1,0 +1,14 @@
+[
+  {
+    "title": "v1.0 — Pipeline opérationnel",
+    "description": "Les 9 agents, l'orchestration LangGraph, la validation Telegram et les tests unitaires."
+  },
+  {
+    "title": "v1.1 — Qualité & mesure",
+    "description": "Search Console, enrichissement des sources tunisiennes, tableau de bord des runs."
+  },
+  {
+    "title": "v2.0 — Diffusion",
+    "description": "Réseaux sociaux, séries d'articles, régénération des articles sous-performants."
+  }
+]

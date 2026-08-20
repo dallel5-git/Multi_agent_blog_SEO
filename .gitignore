@@ -1,0 +1,43 @@
+# Secrets — NE JAMAIS COMMITER
+.env
+.env.local
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Données locales du pipeline
+storage/chroma/
+storage/drafts/
+storage/runs/
+storage/logs/
+storage/covers/
+storage/pending/
+storage/rate_limits/
+storage/analytics/
+storage/telegram_offset.json
+
+# Modèles téléchargés
+.cache/
+models/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

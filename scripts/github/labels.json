@@ -1,0 +1,67 @@
+[
+  {
+    "name": "epic",
+    "color": "5319e7",
+    "description": "Regroupement de plusieurs issues"
+  },
+  {
+    "name": "agent",
+    "color": "0e8a16",
+    "description": "Touche un des 9 agents du pipeline"
+  },
+  {
+    "name": "infra",
+    "color": "1d76db",
+    "description": "Adapter, configuration, CI"
+  },
+  {
+    "name": "domain",
+    "color": "fbca04",
+    "description": "Entite, value object ou port"
+  },
+  {
+    "name": "docs",
+    "color": "c5def5",
+    "description": "Documentation"
+  },
+  {
+    "name": "test",
+    "color": "bfd4f2",
+    "description": "Tests"
+  },
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Anomalie"
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "Amelioration"
+  },
+  {
+    "name": "seo",
+    "color": "e99695",
+    "description": "Qualite SEO du contenu"
+  },
+  {
+    "name": "free-tier",
+    "color": "fef2c0",
+    "description": "Contrainte zero cout"
+  },
+  {
+    "name": "v1",
+    "color": "0052cc",
+    "description": "Livre en v1.0.0"
+  },
+  {
+    "name": "v1.1",
+    "color": "006b75",
+    "description": "Prochaine iteration"
+  },
+  {
+    "name": "backlog",
+    "color": "ededed",
+    "description": "Non planifie"
+  }
+]

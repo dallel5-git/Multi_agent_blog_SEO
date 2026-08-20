@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blogseo-agents — Architecture &amp; flux de travail</title>
+<style>
+  :root{
+    --bg:#080a12; --bg2:#0d1120; --panel:#111629; --panel2:#161c33;
+    --line:#232b47; --line2:#2f3a5e;
+    --ink:#e8ecf8; --ink2:#a8b2cf; --ink3:#6d7899;
+    --indigo:#7c6cff; --indigo-d:#5b4bdb;
+    --cyan:#2fd8e8; --cyan-d:#17a8bd;
+    --green:#3fd68a; --amber:#f5b944; --red:#ff6b6b; --pink:#ff7ac6;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:
+      radial-gradient(1100px 600px at 12% -10%, rgba(124,108,255,.16), transparent 60%),
+      radial-gradient(900px 520px at 92% 4%, rgba(47,216,232,.11), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font:15px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1220px;margin:0 auto;padding:34px 20px 90px}
+  code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+
+  /* ---------- header ---------- */
+  header.hero{padding:26px 0 12px;border-bottom:1px solid var(--line);margin-bottom:30px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--cyan);border:1px solid rgba(47,216,232,.3);
+    background:rgba(47,216,232,.07);padding:5px 12px;border-radius:999px}
+  h1{margin:16px 0 8px;font-size:clamp(28px,4.4vw,44px);line-height:1.12;letter-spacing:-.02em}
+  h1 span{background:linear-gradient(94deg,var(--indigo),var(--cyan));-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .lede{color:var(--ink2);max-width:76ch;font-size:16.5px;margin:0 0 20px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:22px}
+  .kpi{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+    border-radius:var(--r);padding:14px 16px}
+  .kpi b{display:block;font-size:23px;letter-spacing:-.02em}
+  .kpi span{font-size:11.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.09em}
+
+  /* ---------- nav ---------- */
+  nav.tabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;flex-wrap:wrap;
+    padding:12px 0;margin-bottom:26px;background:linear-gradient(180deg,var(--bg) 68%,transparent);
+    backdrop-filter:blur(6px)}
+  nav.tabs button{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink2);
+    padding:8px 15px;border-radius:999px;font-size:13.5px;font-weight:500;transition:.18s;font-family:inherit}
+  nav.tabs button:hover{border-color:var(--line2);color:var(--ink)}
+  nav.tabs button[aria-selected="true"]{background:linear-gradient(94deg,var(--indigo-d),var(--indigo));
+    border-color:transparent;color:#fff;box-shadow:0 5px 22px rgba(124,108,255,.34)}
+
+  section[hidden]{display:none}
+  h2{font-size:22px;margin:34px 0 6px;letter-spacing:-.015em}
+  h2:first-child{margin-top:0}
+  h3{font-size:15.5px;margin:24px 0 10px;color:var(--ink)}
+  .sub{color:var(--ink3);font-size:13.5px;margin:0 0 18px;max-width:82ch}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+    border-radius:var(--r);padding:20px 22px;margin-bottom:16px}
+
+  /* ---------- couches ---------- */
+  .layer{border:1px solid var(--line);border-radius:12px;padding:15px 18px;margin-bottom:10px;
+    background:var(--panel);position:relative;overflow:hidden}
+  .layer::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--indigo))}
+  .layer h4{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:10px}
+  .layer h4 code{color:var(--c,var(--indigo));font-size:14px}
+  .layer p{margin:0;color:var(--ink2);font-size:13.5px}
+  .layer .mods{margin-top:9px;display:flex;flex-wrap:wrap;gap:6px}
+  .mod{font-size:11.5px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    padding:3px 8px;color:var(--ink2);font-family:ui-monospace,monospace}
+  .arrow{text-align:center;color:var(--ink3);font-size:12px;margin:-2px 0 8px;letter-spacing:.05em}
+
+  /* ---------- agents ---------- */
+  .agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:12px}
+  .agent{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+    border-radius:12px;padding:15px 16px;cursor:pointer;transition:.18s;position:relative}
+  .agent:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .agent.on{border-color:var(--indigo);box-shadow:0 0 0 1px var(--indigo),0 12px 32px rgba(124,108,255,.24)}
+  .agent .top{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+  .num{width:26px;height:26px;flex:0 0 26px;border-radius:8px;display:grid;place-items:center;
+    font-size:12.5px;font-weight:700;background:linear-gradient(135deg,var(--indigo-d),var(--indigo));color:#fff}
+  .agent h4{margin:0;font-size:14.5px;letter-spacing:-.01em}
+  .agent p{margin:0;color:var(--ink2);font-size:12.8px;line-height:1.55}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+  .tag{font-size:10.5px;padding:2.5px 7px;border-radius:5px;border:1px solid;letter-spacing:.03em}
+  .t-llm{color:var(--pink);border-color:rgba(255,122,198,.35);background:rgba(255,122,198,.08)}
+  .t-det{color:var(--cyan);border-color:rgba(47,216,232,.3);background:rgba(47,216,232,.07)}
+  .t-crit{color:var(--amber);border-color:rgba(245,185,68,.32);background:rgba(245,185,68,.08)}
+  .t-soft{color:var(--green);border-color:rgba(63,214,138,.3);background:rgba(63,214,138,.07)}
+  .agent .detail{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line2);
+    font-size:12.5px;color:var(--ink2)}
+  .agent.on .detail{display:block}
+  .detail b{color:var(--ink);font-weight:600}
+  .detail ul{margin:6px 0 0;padding-left:17px}
+  .detail li{margin:3px 0}
+
+  /* ---------- flux ---------- */
+  .flow{display:grid;gap:9px}
+  .frow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+  .node{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:12px 14px}
+  .node .n-t{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .node .n-d{font-size:12px;color:var(--ink3);margin-top:3px}
+  .node.acc{border-color:rgba(124,108,255,.45);background:linear-gradient(180deg,rgba(124,108,255,.11),var(--panel))}
+  .node.cy{border-color:rgba(47,216,232,.4);background:linear-gradient(180deg,rgba(47,216,232,.09),var(--panel))}
+  .down{text-align:center;color:var(--indigo);font-size:17px;line-height:1;margin:1px 0}
+  .loop{border:1px dashed var(--amber);border-radius:10px;padding:10px 14px;background:rgba(245,185,68,.06);
+    font-size:12.8px;color:var(--ink2)}
+  .loop b{color:var(--amber)}
+
+  /* ---------- décision ---------- */
+  .decision{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:13px;margin-top:16px}
+  .dec{border-radius:13px;padding:17px 18px;border:1px solid}
+  .dec.ok{border-color:rgba(63,214,138,.42);background:linear-gradient(180deg,rgba(63,214,138,.11),var(--panel))}
+  .dec.no{border-color:rgba(245,185,68,.42);background:linear-gradient(180deg,rgba(245,185,68,.1),var(--panel))}
+  .dec.re{border-color:rgba(124,108,255,.42);background:linear-gradient(180deg,rgba(124,108,255,.11),var(--panel))}
+  .dec h4{margin:0 0 9px;font-size:16px}
+  .dec ol{margin:0;padding-left:18px;font-size:13px;color:var(--ink2)}
+  .dec ol li{margin:5px 0}
+  .dec .out{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.3px;color:var(--ink3)}
+
+  /* ---------- tableaux ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13.2px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--ink3);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  tbody tr:hover{background:rgba(124,108,255,.05)}
+  td code{color:var(--cyan)}
+  .free{color:var(--green);font-weight:600}
+  .scroll{overflow-x:auto}
+
+  ul.plain{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:13.4px}
+  ul.plain li{margin:5px 0}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--line2);color:var(--ink2);background:var(--panel2);margin-right:5px}
+  pre{background:#070912;border:1px solid var(--line);border-radius:10px;padding:13px 15px;
+    overflow-x:auto;font-size:12.4px;color:var(--ink2);margin:10px 0}
+  pre .c{color:var(--ink3)}
+  pre .k{color:var(--cyan)}
+  footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  a{color:var(--cyan)}
+  @media(max-width:640px){.wrap{padding:20px 14px 60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">◆ blogseo-agents · v1.0.0</span>
+  <h1>Neuf agents qui écrivent votre blog,<br><span>et vous laissent le dernier mot.</span></h1>
+  <p class="lede">
+    Un pipeline multi-agents orchestré par LangGraph qui fait la veille technologique mondiale
+    et tunisienne, choisit un sujet non redondant, rédige l'article <strong>en français</strong>,
+    vérifie son exactitude technique, optimise son SEO, le passe au crible d'une checklist de
+    qualité — puis vous demande confirmation sur Telegram avant toute publication.
+    Le tout avec des services 100 % gratuits, sans jamais sortir une carte bancaire.
+  </p>
+  <div class="kpis">
+    <div class="kpi"><b>9</b><span>agents</span></div>
+    <div class="kpi"><b>2</b><span>boucles de feedback</span></div>
+    <div class="kpi"><b>14</b><span>ports abstraits</span></div>
+    <div class="kpi"><b>20</b><span>contrôles qualité</span></div>
+    <div class="kpi"><b>132</b><span>tests unitaires</span></div>
+    <div class="kpi"><b style="color:var(--green)">0 €</b><span>coût mensuel</span></div>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true"  data-t="flux">Flux de travail</button>
+  <button role="tab" aria-selected="false" data-t="agents">Les 9 agents</button>
+  <button role="tab" aria-selected="false" data-t="decision">Décision Telegram</button>
+  <button role="tab" aria-selected="false" data-t="couches">Clean Architecture</button>
+  <button role="tab" aria-selected="false" data-t="qualite">Quality Gate</button>
+  <button role="tab" aria-selected="false" data-t="stack">Stack &amp; coûts</button>
+  <button role="tab" aria-selected="false" data-t="pannes">Modes dégradés</button>
+</nav>
+
+<!-- ══════════════════ FLUX ══════════════════ -->
+<section id="flux">
+  <h2>Le flux complet d'un run</h2>
+  <p class="sub">Un run dure de 3 à 8 minutes hors attente de validation, et consomme 7 à 9 appels LLM — soit environ 0,6 % du quota Gemini gratuit journalier.</p>
+
+  <div class="flow">
+    <div class="frow">
+      <div class="node cy"><div class="n-t">⟳ Bootstrap</div>
+        <div class="n-d">Lit les <code>.mdx</code> du blog, réindexe le vector store anti-doublon, charge le feedback de performance</div></div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="frow">
+      <div class="node"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px">1</span> Trend Scout</div>
+        <div class="n-d">Hacker News · Reddit · dev.to · RSS → thèmes hiérarchisés</div></div>
+      <div class="node"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px">2</span> Tunisia Watcher</div>
+        <div class="n-d">Recherche web TN · RSS tunisiens · Google Trends TN → faits locaux, points de douleur, angles</div></div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="frow">
+      <div class="node acc"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px">3</span> Keyword Analyst</div>
+        <div class="n-d">Croise les deux veilles, choisit <b>un seul</b> sujet + mots-clés + plan, puis vérifie l'originalité contre ChromaDB. Jusqu'à 3 tentatives.</div></div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="frow">
+      <div class="node acc"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px">4</span> Content Writer</div>
+        <div class="n-d">Rédige 1200-2000 mots en français, angle tunisien, code commenté en français, CTA YouTube</div></div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="frow">
+      <div class="node"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px">5</span> Technical Reviewer</div>
+        <div class="n-d">Teste les liens en HTTP réel, détecte les secrets en clair, relit le code</div></div>
+      <div class="node"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px">6</span> SEO Editor</div>
+        <div class="n-d">meta title/description, slug, alt-text, maillage interne validé</div></div>
+    </div>
+    <div class="down">↓</div>
+
+    <div class="frow">
+      <div class="node cy"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px;background:linear-gradient(135deg,var(--cyan-d),var(--cyan))">7</span> Quality Gate</div>
+        <div class="n-d">20 contrôles déterministes, <b>zéro appel LLM</b></div></div>
+    </div>
+
+    <div class="loop">🔁 <b>Boucle n°1 — Quality Gate → Content Writer.</b>
+      Si un contrôle bloquant échoue, l'article repart en révision avec des consignes précises
+      (<code>[BLOQUANT]</code> / <code>[À améliorer]</code>). Borné par <code>MAX_REVISIONS = 2</code>.
+      Au-delà, l'article part quand même en validation humaine avec ses défauts affichés — mieux vaut
+      une décision informée qu'un run perdu.</div>
+    <div class="down">↓</div>
+
+    <div class="frow">
+      <div class="node acc"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px">8</span> Publisher</div>
+        <div class="n-d">Génère la couverture, écrit le brouillon, envoie l'aperçu Telegram et attend votre clic (jusqu'à 24 h)</div></div>
+    </div>
+
+    <div class="loop">🔁 <b>Boucle n°2 — bouton 🔁 → Content Writer.</b>
+      Vous pouvez demander une réécriture complète depuis Telegram. Rien n'est écrit dans le blog.</div>
+    <div class="down">↓</div>
+
+    <div class="frow">
+      <div class="node cy"><div class="n-t"><span class="num" style="width:22px;height:22px;flex:0 0 22px;font-size:11px;background:linear-gradient(135deg,var(--cyan-d),var(--cyan))">9</span> Analytics Tracker</div>
+        <div class="n-d">Ajoute l'article à l'index anti-doublon et prépare le feedback de performance pour le prochain run</div></div>
+    </div>
+  </div>
+
+  <h3>Ce qui circule entre les agents</h3>
+  <p class="sub">Un seul objet, <code>PipelineState</code>. Aucun agent n'appelle un autre agent : ils lisent et écrivent des champs de cet état. C'est ce qui rend l'ajout ou le retrait d'un agent trivial.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Champ</th><th>Écrit par</th><th>Lu par</th></tr></thead>
+    <tbody>
+      <tr><td><code>existing_articles</code></td><td>bootstrap</td><td>1, 3, 6</td></tr>
+      <tr><td><code>global_digest</code>, <code>global_themes</code></td><td>1 Trend Scout</td><td>3 Keyword Analyst, 4 Content Writer</td></tr>
+      <tr><td><code>tunisia_context</code>, <code>trends_scores</code></td><td>2 Tunisia Watcher</td><td>3 Keyword Analyst, 4 Content Writer</td></tr>
+      <tr><td><code>topic</code></td><td>3 Keyword Analyst</td><td>4, 6, 7</td></tr>
+      <tr><td><code>article</code></td><td>4 Content Writer</td><td>5, 6, 7, 8, 9</td></tr>
+      <tr><td><code>review</code></td><td>5 Technical Reviewer</td><td>7 Quality Gate</td></tr>
+      <tr><td><code>quality</code>, <code>revision_instructions</code></td><td>7 Quality Gate</td><td>4 Content Writer, 8 Publisher</td></tr>
+      <tr><td><code>draft_path</code>, <code>published_path</code>, <code>commit_sha</code></td><td>8 Publisher</td><td>9 Analytics Tracker</td></tr>
+      <tr><td><code>performance_feedback</code></td><td>9 Analytics Tracker</td><td>3 Keyword Analyst <em>(run suivant)</em></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ══════════════════ AGENTS ══════════════════ -->
+<section id="agents" hidden>
+  <h2>Les 9 agents</h2>
+  <p class="sub">Cliquez sur une carte pour voir le détail. <span class="pill">LLM</span> l'agent appelle un modèle · <span class="pill">déterministe</span> aucune IA · <span class="pill">critique</span> son échec arrête le run · <span class="pill">tolérant</span> son échec est journalisé puis ignoré.</p>
+  <div class="agents" id="agentGrid"></div>
+</section>
+
+<!-- ══════════════════ DÉCISION ══════════════════ -->
+<section id="decision" hidden>
+  <h2>Le moment décisif : votre validation Telegram</h2>
+  <p class="sub">C'est la règle métier centrale du projet. <strong>Rien n'est jamais publié sans votre clic.</strong> Un brouillon est systématiquement écrit dans <code>storage/drafts/</code> avant même la demande — le travail du pipeline n'est jamais perdu, même si Telegram ou Git tombent.</p>
+
+  <div class="card">
+    <h3 style="margin-top:0">Ce que vous recevez</h3>
+    <ul class="plain">
+      <li>Le titre optimisé, la meta description, le slug, la catégorie</li>
+      <li>Le nombre de mots, le nombre de sections, le score de qualité</li>
+      <li>L'angle tunisien retenu et les avertissements éventuels</li>
+      <li>Un extrait du texte, et le fichier <code>.mdx</code> complet en pièce jointe</li>
+      <li>Trois boutons</li>
+    </ul>
+  </div>
+
+  <div class="decision">
+    <div class="dec ok">
+      <h4>✅ Publier (push Git)</h4>
+      <ol>
+        <li>Le <code>.mdx</code> est écrit dans <code>content/articles/</code></li>
+        <li>L'image de couverture est copiée dans <code>public/covers/</code></li>
+        <li><code>git add</code> des deux fichiers <em>uniquement</em></li>
+        <li><code>git commit -m "content: …"</code></li>
+        <li><code>git push origin main</code></li>
+        <li><b>Vercel déploie automatiquement</b></li>
+      </ol>
+      <div class="out">Statut du run : <code>published</code> · notification avec l'URL de l'article</div>
+    </div>
+
+    <div class="dec no">
+      <h4>❌ Garder en local</h4>
+      <ol>
+        <li>Le <code>.mdx</code> est écrit dans <code>content/articles/</code></li>
+        <li>L'image de couverture est copiée</li>
+        <li><b>Aucun commit. Aucun push.</b></li>
+        <li>Vous relisez, corrigez, et poussez vous-même quand vous voulez</li>
+      </ol>
+      <div class="out">Statut : <code>saved_locally</code> · Telegram vous renvoie la commande <code>git</code> prête à coller</div>
+    </div>
+
+    <div class="dec re">
+      <h4>🔁 Faire réécrire</h4>
+      <ol>
+        <li>Rien n'est écrit dans le blog</li>
+        <li>L'article repart à l'agent 4 avec un feedback</li>
+        <li>Nouvelle passe : relecture, SEO, Quality Gate</li>
+        <li>Nouvelle demande de validation</li>
+      </ol>
+      <div class="out">Boucle bornée, retour automatique au flux normal ensuite</div>
+    </div>
+  </div>
+
+  <h3>Les cas particuliers</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Situation</th><th>Comportement appliqué</th><th>Pourquoi</th></tr></thead>
+    <tbody>
+      <tr><td>Aucune réponse après 24 h</td><td>comme ❌ — écriture locale</td><td>Ne jamais publier par défaut</td></tr>
+      <tr><td>Telegram non configuré</td><td>comme ❌ — écriture locale</td><td>Pas de canal de validation ⇒ pas de publication</td></tr>
+      <tr><td><code>--dry-run</code></td><td>brouillon seul, blog intact</td><td>Tester sans aucun risque</td></tr>
+      <tr><td><code>HUMAN_REVIEW=false</code></td><td>publication automatique</td><td>Réservé à un usage averti, après plusieurs semaines de dry-runs</td></tr>
+      <tr><td><code>git push</code> refusé</td><td>commit local conservé, fichier écrit</td><td>Le travail n'est jamais perdu ; la commande à lancer est affichée</td></tr>
+      <tr><td>Slug déjà utilisé</td><td>fichier suffixé par la date</td><td>Ne jamais écraser un article publié</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ══════════════════ COUCHES ══════════════════ -->
+<section id="couches" hidden>
+  <h2>Clean Architecture — la règle de dépendance</h2>
+  <p class="sub">Les flèches ne pointent que vers l'intérieur. <code>domain/</code> n'importe jamais <code>infrastructure/</code>. Conséquence pratique : remplacer Gemini, DuckDuckGo ou Telegram ne touche qu'un seul fichier.</p>
+
+  <div class="layer" style="--c:var(--pink)">
+    <h4><code>interfaces/</code> Points d'entrée</h4>
+    <p>CLI (<code>run</code>, <code>check</code>, <code>index</code>, <code>graph</code>, <code>runs</code>, <code>show</code>) et planificateur APScheduler / systemd.</p>
+    <div class="mods"><span class="mod">cli.py</span><span class="mod">scheduler.py</span></div>
+  </div>
+  <div class="arrow">↓ dépend de tout</div>
+
+  <div class="layer" style="--c:var(--cyan)">
+    <h4><code>orchestrator/</code> Topologie du pipeline</h4>
+    <p>La topologie est décrite <b>une seule fois</b> dans <code>pipeline_spec.py</code>, puis exécutée par LangGraph ou par l'exécuteur séquentiel de secours.</p>
+    <div class="mods"><span class="mod">pipeline_spec.py</span><span class="mod">graph.py</span><span class="mod">sequential.py</span></div>
+  </div>
+  <div class="arrow">↓ dépend de application/ et domain/</div>
+
+  <div class="layer" style="--c:var(--indigo)">
+    <h4><code>application/</code> Les agents et les cas d'usage</h4>
+    <p>Les 9 agents, leurs prompts système (documentés en français) et le cas d'usage <code>GenerateArticleUseCase</code>. <b>Ne connaissent que les ports</b> — jamais Gemini, jamais requests.</p>
+    <div class="mods"><span class="mod">agents/</span><span class="mod">prompts/</span><span class="mod">use_cases/</span><span class="mod">dto/</span></div>
+  </div>
+  <div class="arrow">↓ dépend UNIQUEMENT des ports</div>
+
+  <div class="layer" style="--c:var(--amber)">
+    <h4><code>domain/</code> Le cœur — ne dépend de rien</h4>
+    <p>Entités, value objects immuables, <b>14 ports abstraits</b> et les erreurs métier. Pas une seule dépendance externe, pas même <code>requests</code>.</p>
+    <div class="mods"><span class="mod">entities/</span><span class="mod">value_objects/</span><span class="mod">ports/</span><span class="mod">errors.py</span></div>
+  </div>
+  <div class="arrow">↑ implémenté par</div>
+
+  <div class="layer" style="--c:var(--green)">
+    <h4><code>infrastructure/</code> Les adapters concrets</h4>
+    <p>Chaque port a au moins deux implémentations : une réelle et une de test ou de repli. C'est ce qui rend le mode <code>--offline</code> possible.</p>
+    <div class="mods"><span class="mod">llm/</span><span class="mod">search/</span><span class="mod">sources/</span><span class="mod">trends/</span><span class="mod">embeddings/</span><span class="mod">vectorstore/</span><span class="mod">images/</span><span class="mod">publishing/</span><span class="mod">notifications/</span><span class="mod">persistence/</span><span class="mod">analytics/</span><span class="mod">config/</span></div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3 style="margin-top:0">Le composition root</h3>
+    <p class="sub" style="margin-bottom:8px">Un seul fichier fait se rencontrer les couches : <code>infrastructure/config/container.py</code>. Vérifier la règle de dépendance tient en deux commandes :</p>
+    <pre><span class="c"># doivent ne rien renvoyer</span>
+<span class="k">grep</span> -r "infrastructure" src/blogseo/domain/
+<span class="k">grep</span> -r "infrastructure" src/blogseo/application/</pre>
+  </div>
+
+  <h3>Les 14 ports</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Port</th><th>Implémentation réelle</th><th>Repli / test</th></tr></thead>
+    <tbody>
+      <tr><td><code>LLMPort</code></td><td>Gemini → Groq (chaîne de fallback)</td><td><code>FakeLLM</code> hors ligne</td></tr>
+      <tr><td><code>SearchPort</code></td><td>DuckDuckGo → Tavily</td><td>liste vide</td></tr>
+      <tr><td><code>TrendsPort</code></td><td>pytrends (geo TN)</td><td>signal ignoré</td></tr>
+      <tr><td><code>TechSourcePort</code></td><td>HN · Reddit · dev.to · RSS</td><td>source ignorée</td></tr>
+      <tr><td><code>EmbeddingPort</code></td><td>sentence-transformers CPU</td><td>hachage de n-grammes</td></tr>
+      <tr><td><code>ArticleHistoryPort</code></td><td>ChromaDB (SQLite)</td><td>index JSON</td></tr>
+      <tr><td><code>ArticleSourcePort</code></td><td>lecture des <code>.mdx</code> du blog</td><td>—</td></tr>
+      <tr><td><code>RunRepositoryPort</code></td><td>un JSON par run</td><td>—</td></tr>
+      <tr><td><code>ArticleWriterPort</code></td><td>écriture <code>.mdx</code> atomique</td><td>—</td></tr>
+      <tr><td><code>GitPublisherPort</code></td><td>CLI <code>git</code></td><td>désactivé si pas de dépôt</td></tr>
+      <tr><td><code>ImageGeneratorPort</code></td><td>Pollinations.ai</td><td>dégradé Pillow local</td></tr>
+      <tr><td><code>NotifierPort</code></td><td>Telegram Bot API</td><td><code>NullNotifier</code></td></tr>
+      <tr><td><code>HumanReviewPort</code></td><td>boutons inline Telegram</td><td>décision par défaut = ❌</td></tr>
+      <tr><td><code>AnalyticsPort</code></td><td>export JSON manuel <em>(stub v1)</em></td><td>feedback vide</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ══════════════════ QUALITÉ ══════════════════ -->
+<section id="qualite" hidden>
+  <h2>Quality Gate — 20 contrôles, zéro IA</h2>
+  <p class="sub">Choix structurant : <strong>aucun appel LLM dans la porte de qualité.</strong> Elle doit être reproductible, testable unitairement et impossible à « charmer » par un modèle. Un contrôle 🔴 bloquant renvoie l'article au rédacteur ; un contrôle 🟡 est signalé dans le message Telegram sans bloquer.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Contrôle</th><th>Gravité</th><th>Ce qu'il vérifie</th></tr></thead>
+    <tbody>
+      <tr><td><code>langue_francaise</code></td><td>🔴</td><td>L'article est bien rédigé en français (proportion de mots-outils FR vs EN)</td></tr>
+      <tr><td><code>titres_en_francais</code></td><td>🟡</td><td>Aucun titre de section en anglais</td></tr>
+      <tr><td><code>longueur_minimale</code></td><td>🔴</td><td>≥ 1200 mots, blocs de code exclus</td></tr>
+      <tr><td><code>longueur_maximale</code></td><td>🟡</td><td>≤ 2000 mots + 15 % de tolérance</td></tr>
+      <tr><td><code>sections_h2</code></td><td>🔴</td><td>≥ 4 sections <code>##</code></td></tr>
+      <tr><td><code>pas_de_h1</code></td><td>🔴</td><td>Aucun <code>#</code> dans le corps — le site affiche déjà le titre</td></tr>
+      <tr><td><code>blocs_de_code_equilibres</code></td><td>🔴</td><td>Nombre pair de <code>```</code> — sinon le rendu MDX casse</td></tr>
+      <tr><td><code>presence_code_ou_liste</code></td><td>🟡</td><td>Au moins un exemple concret ou une liste d'étapes</td></tr>
+      <tr><td><code>mot_cle_dans_le_corps</code></td><td>🔴</td><td>Le mot-clé principal apparaît réellement</td></tr>
+      <tr><td><code>densite_mot_cle</code></td><td>🟡</td><td>≤ 2,5 % — détection du bourrage</td></tr>
+      <tr><td><code>mot_cle_dans_un_titre</code></td><td>🟡</td><td>Repris dans au moins une section</td></tr>
+      <tr><td><code>angle_tunisien_present</code></td><td>🔴</td><td>≥ 2 occurrences de termes locaux (Tunisie, Tunis, dinar…)</td></tr>
+      <tr><td><code>angle_tunisien_en_intro</code></td><td>🟡</td><td>Présent dès les 1200 premiers caractères</td></tr>
+      <tr><td><code>meta_description_presente</code></td><td>🔴</td><td>Non vide</td></tr>
+      <tr><td><code>meta_title_longueur</code></td><td>🟡</td><td>30-60 caractères</td></tr>
+      <tr><td><code>meta_description_longueur</code></td><td>🟡</td><td>120-158 caractères</td></tr>
+      <tr><td><code>originalite_sujet</code></td><td>🔴</td><td>Similarité &lt; 0,85 avec tout article existant</td></tr>
+      <tr><td><code>relecture_technique</code></td><td>🔴</td><td>Aucun problème bloquant relevé par l'agent 5</td></tr>
+      <tr><td><code>liens_valides</code></td><td>🟡</td><td>Aucun lien mort (testé en HTTP réel)</td></tr>
+      <tr><td><code>appel_a_action</code></td><td>🟡</td><td>CTA vers la chaîne YouTube présent</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="card" style="margin-top:18px">
+    <h3 style="margin-top:0">Anti-doublon sémantique</h3>
+    <ol style="color:var(--ink2);font-size:13.4px;padding-left:19px">
+      <li>À chaque run, tous les <code>.mdx</code> du blog sont relus et réindexés — vous avez pu en ajouter un à la main entre deux runs.</li>
+      <li>Chaque article est encodé en vecteur : <code>titre + description + catégorie + tags</code>, avec <code>all-MiniLM-L6-v2</code> en local sur CPU.</li>
+      <li>Le Keyword Analyst encode son sujet candidat et interroge ChromaDB.</li>
+      <li>Similarité cosinus ≥ <code>0.85</code> → sujet refusé, nouvelle proposition demandée avec une température plus élevée. Jusqu'à 3 tentatives.</li>
+      <li>Après écriture réussie, l'agent 9 ajoute le nouvel article à l'index.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ══════════════════ STACK ══════════════════ -->
+<section id="stack" hidden>
+  <h2>Stack technique — et pourquoi elle coûte 0 €</h2>
+  <p class="sub">Contrainte non négociable du projet : aucune carte bancaire, jamais. Aucun SDK ni appel vers un service payant n'est présent dans le code — ni en option, ni en commentaire « à activer plus tard ».</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Besoin</th><th>Service retenu</th><th>Clé requise</th><th>Quota gratuit</th><th>Écarté</th></tr></thead>
+    <tbody>
+      <tr><td>LLM principal</td><td>Google Gemini <code>2.0-flash</code></td><td>gratuite</td><td class="free">~15/min · ~1500/jour</td><td>OpenAI, Anthropic</td></tr>
+      <tr><td>LLM de secours</td><td>Groq <code>llama-3.3-70b</code></td><td>gratuite</td><td class="free">~30/min</td><td>—</td></tr>
+      <tr><td>Recherche web</td><td>DuckDuckGo (<code>ddgs</code>)</td><td class="free">aucune</td><td class="free">illimité en pratique</td><td>SerpAPI</td></tr>
+      <tr><td>Recherche (repli)</td><td>Tavily</td><td>optionnelle</td><td class="free">1000/mois</td><td>—</td></tr>
+      <tr><td>Tendances</td><td>pytrends (Google Trends)</td><td class="free">aucune</td><td class="free">gratuit</td><td>Semrush, Ahrefs</td></tr>
+      <tr><td>Veille tech</td><td>HN Firebase · Reddit <code>.json</code> · dev.to · RSS</td><td class="free">aucune</td><td class="free">API publiques</td><td>—</td></tr>
+      <tr><td>Embeddings</td><td>sentence-transformers <code>all-MiniLM-L6-v2</code></td><td class="free">aucune</td><td class="free">local, CPU</td><td>OpenAI embeddings</td></tr>
+      <tr><td>Vector store</td><td>ChromaDB (SQLite embarqué)</td><td class="free">aucune</td><td class="free">local</td><td>Pinecone, Weaviate</td></tr>
+      <tr><td>Image de couverture</td><td>Pollinations.ai + repli Pillow</td><td class="free">aucune</td><td class="free">gratuit</td><td>DALL·E, Midjourney</td></tr>
+      <tr><td>Notifications</td><td>Telegram Bot API</td><td>gratuite</td><td class="free">illimité</td><td>Twilio, SendGrid</td></tr>
+      <tr><td>Orchestration</td><td>LangGraph</td><td class="free">aucune</td><td class="free">open source</td><td>—</td></tr>
+      <tr><td>Planification</td><td>APScheduler + systemd</td><td class="free">aucune</td><td class="free">local</td><td>—</td></tr>
+      <tr><td>Hébergement du blog</td><td>Vercel Hobby <em>(existant)</em></td><td>gratuite</td><td class="free">Hobby</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Tenir dans les quotas</h3>
+  <ul class="plain">
+    <li><b>Rate limiter à double fenêtre</b> (minute + jour) qui bloque <em>avant</em> l'appel plutôt que d'encaisser un 429. L'état journalier est persisté sur disque : redémarrer le process ne remet pas le compteur à zéro.</li>
+    <li><b>Bascule Gemini → Groq</b> : sur 429, bascule immédiate et Gemini est écarté pour le reste du run. Sur panne réseau, bascule aussi mais Gemini est retenté au coup suivant.</li>
+    <li><b>Retry avec backoff exponentiel et jitter</b> sur tous les appels réseau.</li>
+    <li><b>7 à 9 appels LLM par run</b> (jusqu'à 13 avec deux révisions), soit ~0,6 % du quota Gemini gratuit pour un run toutes les 48 h.</li>
+  </ul>
+
+  <h3>Où sont les fichiers</h3>
+  <pre><span class="c"># Le projet</span>
+Blog IA/blog-seo-agents/
+├── src/blogseo/          <span class="c"># le code, en 4 couches</span>
+├── storage/              <span class="c"># brouillons, runs, index, logs, quotas</span>
+├── docs/                 <span class="c"># ARCHITECTURE.md, BACKLOG.md, adr/</span>
+├── scripts/              <span class="c"># create_github_issues.sh, install_systemd_timer.sh</span>
+├── MEMOIRE.md            <span class="c"># ← la mémoire du projet</span>
+└── .env                  <span class="c"># vos clés (jamais commité)</span>
+
+<span class="c"># Le blog, inchangé</span>
+Blog IA/oussama-blog/
+├── content/articles/     <span class="c"># ← là où l'agent 8 écrit le .mdx</span>
+└── public/covers/        <span class="c"># ← là où va l'image de couverture</span></pre>
+</section>
+
+<!-- ══════════════════ PANNES ══════════════════ -->
+<section id="pannes" hidden>
+  <h2>Modes dégradés — que se passe-t-il quand ça casse ?</h2>
+  <p class="sub">Le pipeline tourne sans surveillance toutes les 48 h. Chaque panne a donc un comportement défini et testé. <strong>Invariant absolu : un brouillon est écrit dans <code>storage/drafts/</code> avant toute décision.</strong> Le travail n'est jamais perdu.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Panne</th><th>Comportement</th><th>Impact sur le run</th></tr></thead>
+    <tbody>
+      <tr><td>Gemini renvoie 429 (quota)</td><td>Bascule immédiate sur Groq, Gemini écarté pour le run</td><td class="free">aucun</td></tr>
+      <tr><td>Gemini renvoie 500 / timeout</td><td>Bascule sur Groq, Gemini retenté au prochain appel</td><td class="free">aucun</td></tr>
+      <tr><td>Tous les LLM en échec</td><td><code>AllProvidersFailedError</code> + notification Telegram</td><td>run en échec, tracé</td></tr>
+      <tr><td>Une source de veille morte</td><td>Journalisée, ignorée</td><td class="free">aucun</td></tr>
+      <tr><td>Toutes les sources mortes</td><td>Avertissement, le Keyword Analyst travaille avec ce qu'il a</td><td>veille dégradée</td></tr>
+      <tr><td>DuckDuckGo bloque</td><td>Repli Tavily si une clé existe</td><td>veille dégradée</td></tr>
+      <tr><td>Google Trends en 429</td><td>Signal ignoré</td><td class="free">aucun</td></tr>
+      <tr><td><code>chromadb</code> absent</td><td>Index JSON local</td><td>anti-doublon moins fin</td></tr>
+      <tr><td><code>sentence-transformers</code> absent</td><td>Encodeur par hachage de n-grammes</td><td>anti-doublon moins fin</td></tr>
+      <tr><td><code>langgraph</code> absent</td><td>Exécuteur séquentiel</td><td class="free">aucun</td></tr>
+      <tr><td>Pollinations indisponible</td><td>Image de secours générée avec Pillow</td><td class="free">aucun</td></tr>
+      <tr><td>Pillow absent</td><td>Article publié sans couverture</td><td>cosmétique</td></tr>
+      <tr><td>Telegram indisponible</td><td>Décision par défaut = écriture locale</td><td>pas de publication auto</td></tr>
+      <tr><td><code>git push</code> refusé</td><td>Commit local conservé, commande affichée</td><td>push manuel requis</td></tr>
+      <tr><td>Quality Gate toujours en échec</td><td>Après 2 révisions, l'article part en validation avec ses défauts</td><td>décision humaine informée</td></tr>
+      <tr><td>Sujet doublon 3 fois de suite</td><td><code>DuplicateTopicError</code> explicite + notification</td><td>run arrêté proprement</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="card" style="margin-top:20px">
+    <h3 style="margin-top:0">Sécurité</h3>
+    <ul class="plain">
+      <li><b>Aucune clé en dur.</b> Tout passe par des variables d'environnement ; <code>.env</code> est dans <code>.gitignore</code> et la CI vérifie qu'il n'est pas versionné.</li>
+      <li><b>Détection de secrets dans l'article généré</b> par l'agent 5 : motifs Google, OpenAI, Groq, GitHub, Telegram, Slack. Un secret en clair est un blocage.</li>
+      <li><b>Jamais de <code>git add -A</code></b> : le bot ne commite que les fichiers qu'il a produits, pour ne pas emporter votre travail en cours.</li>
+      <li><b>Écriture atomique</b> (fichier temporaire + <code>os.replace</code>) : Next.js ne peut jamais lire un <code>.mdx</code> à moitié écrit.</li>
+      <li><b>Identité Git locale au dépôt</b>, jamais en configuration globale.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <strong>blogseo-agents v1.0.0</strong> — Oussama Dallel ·
+  <a href="https://github.com/dallel5-git/Multi_agent_blog_SEO">Multi_agent_blog_SEO</a> ·
+  Blog : <a href="https://oussama-ai-blog-v1.vercel.app/">oussama-ai-blog-v1.vercel.app</a> ·
+  <a href="https://www.youtube.com/@oussamadallel5">YouTube</a><br>
+  Documentation complète : <code>MEMOIRE.md</code>, <code>docs/ARCHITECTURE.md</code>, <code>docs/BACKLOG.md</code>, <code>docs/adr/</code>
+</footer>
+
+</div>
+
+<script>
+const AGENTS = [
+ {n:1,t:"Trend Scout",d:"Veille technologique mondiale. Collecte des signaux réels sur Hacker News, Reddit, dev.to et des flux RSS, puis les regroupe en thèmes exploitables.",
+  tags:[["LLM","t-llm"],["tolérant","t-soft"]],
+  det:{"Sources":["Hacker News — API Firebase, filtrée sur les thèmes du blog","Reddit — endpoints .json publics, User-Agent explicite obligatoire","dev.to — /api/articles par tag","RSS — Product Hunt, blog n8n"],
+       "Garde-fou":["Le LLM ne peut citer que des URLs présentes dans les signaux fournis — aucune invention","Chaque source est isolée : une panne n'affecte pas les autres"],
+       "Produit":["3 à 6 thèmes classés par fraîcheur, potentiel pédagogique et transposabilité en Tunisie"]}},
+
+ {n:2,t:"Tunisia Watcher",d:"Veille sur l'écosystème tech et business tunisien. C'est ce qui rend l'angle local crédible plutôt que décoratif.",
+  tags:[["LLM","t-llm"],["tolérant","t-soft"]],
+  det:{"Sources":["Recherche web ciblée (région fr-tn) sur des requêtes tunisiennes","Flux RSS de médias tunisiens, configurables dans .env","Google Trends géolocalisé TN"],
+       "Cherche":["Actualité des startups et PME tunisiennes","Startup Act, Smart Capital, incubateurs, ISET","Contraintes réelles : paiement en ligne, change, coûts en dinars","Marché de l'emploi tech local, communautés, meetups"],
+       "Garde-fou":["Si la recherche ne trouve rien, le champ coverage_gap le dit explicitement — jamais de statistique ou de programme inventé"]}},
+
+ {n:3,t:"Keyword Analyst",d:"L'agent le plus décisif. Croise les deux veilles, choisit UN seul sujet avec ses mots-clés et son plan, et garantit qu'il n'est pas un doublon.",
+  tags:[["LLM","t-llm"],["critique","t-crit"]],
+  det:{"Critères de décision":["Non-doublon vérifié contre le vector store","Intention de recherche claire et précise","Angle tunisien réel, pas un vernis","Faisabilité en tutoriel avec des outils gratuits","Longue traîne : 3 à 6 mots, pas de généralité"],
+       "Anti-doublon":["Encode titre + angle + mots-clés, interroge ChromaDB","Similarité ≥ 0,85 → sujet refusé","Jusqu'à 3 tentatives, température croissante, liste des sujets déjà rejetés injectée dans le prompt"],
+       "Contrainte":["La catégorie doit appartenir à l'union fermée du blog : IA, n8n, Make, Python, Agents IA — sinon le build Next.js casse"]}},
+
+ {n:4,t:"Content Writer",d:"Rédige le corps de l'article en français, 1200 à 2000 mots. C'est aussi la cible des deux boucles de feedback.",
+  tags:[["LLM","t-llm"],["critique","t-crit"]],
+  det:{"Deux modes":["Première rédaction à partir du brief du Keyword Analyst","Révision à partir des consignes du Quality Gate — température plus basse, on corrige sans réinventer"],
+       "Règles de forme":["Aucun frontmatter YAML (généré ailleurs)","Aucun H1 (le site affiche déjà le titre)","4 à 7 sections ##, au moins un bloc de code commenté en français","Composants MDX autorisés uniquement : <Callout type=\"info|warning\">","CTA final vers la chaîne YouTube"],
+       "Langue":["Tout est en français : titres, paragraphes, listes, commentaires de code. Seuls les noms d'outils et les termes techniques consacrés restent en anglais."]}},
+
+ {n:5,t:"Technical Reviewer",d:"Empêche la publication d'une information techniquement fausse ou d'un secret en clair. Deux couches : déterministe puis LLM.",
+  tags:[["LLM","t-llm"],["déterministe","t-det"],["tolérant","t-soft"]],
+  det:{"Couche déterministe":["Test HTTP réel de chaque lien cité (HEAD puis GET, en parallèle)","Détection de secrets : clés Google, OpenAI, Groq, GitHub, tokens Telegram et Slack → blocage"],
+       "Couche LLM":["Cohérence du code : imports, noms d'API, variables non définies","Versions et noms de produits plausibles","Affirmations factuelles vérifiables ; une statistique sans source est bloquante"],
+       "Ne fait pas":["Réécrire l'article","Juger le style ou le ton"]}},
+
+ {n:6,t:"SEO Editor",d:"Optimise les métadonnées sans toucher au corps. Le LLM propose, l'agent valide et corrige de façon déterministe.",
+  tags:[["LLM","t-llm"],["déterministe","t-det"],["critique","t-crit"]],
+  det:{"Produit":["meta_title 30-60 caractères, mot-clé placé le plus à gauche possible","meta_description 120-158 caractères","slug ASCII sans mot vide, dédoublonné contre les articles existants","alt-text de la couverture, 8 à 15 mots","3 à 5 tags cohérents avec ceux déjà utilisés"],
+       "Validation déterministe":["Longueurs corrigées automatiquement si le LLM sort des bornes","Un slug interne inventé par le LLM est retiré et journalisé","Le mot-clé est considéré présent si tous ses mots le sont — évite les titres artificiels"],
+       "Maillage interne":["Section « À lire aussi » ajoutée en fin d'article, avec les slugs réellement existants. Insérer des liens au milieu du texte généré casse trop souvent le sens."]}},
+
+ {n:7,t:"Quality Gate",d:"La porte de qualité. 20 contrôles, aucun appel LLM — c'est délibéré : elle doit être reproductible et impossible à charmer par un modèle.",
+  tags:[["déterministe","t-det"],["critique","t-crit"]],
+  det:{"Contrôles bloquants":["Langue française","Longueur ≥ 1200 mots","≥ 4 sections H2, aucun H1, blocs de code fermés","Mot-clé présent dans le corps","Angle tunisien présent","meta description non vide","Originalité du sujet","Aucune erreur technique bloquante"],
+       "Contrôles d'avertissement":["Longueur maximale, densité de mot-clé, longueurs SEO, liens morts, CTA, titres en anglais"],
+       "En cas de rejet":["Produit des consignes structurées [BLOQUANT] / [À améliorer]","Renvoie l'article au Content Writer, jusqu'à MAX_REVISIONS fois","Au-delà, l'article part en validation humaine avec ses défauts affichés"]}},
+
+ {n:8,t:"Publisher",d:"Génère la couverture, demande votre décision sur Telegram, écrit le fichier et pousse sur Git — ou pas, selon votre clic.",
+  tags:[["déterministe","t-det"],["critique","t-crit"]],
+  det:{"Toujours, quoi qu'il arrive":["Un brouillon est écrit dans storage/drafts/ AVANT la demande de décision"],
+       "✅ Publier":["Écrit dans content/articles/, copie la couverture, git add ciblé, commit, push → Vercel déploie"],
+       "❌ Garder en local":["Écrit dans content/articles/ et rien d'autre. Telegram vous renvoie la commande git prête à coller."],
+       "🔁 Faire réécrire":["Rien n'est écrit dans le blog, l'article repart à l'agent 4"],
+       "Sécurité":["Jamais de git add -A","Écriture atomique (tmp + os.replace)","Slug déjà pris → suffixé par la date, jamais d'écrasement"]}},
+
+ {n:9,t:"Analytics Tracker",d:"Ferme la boucle : réindexe le nouvel article pour l'anti-doublon et prépare le feedback de performance du prochain run.",
+  tags:[["déterministe","t-det"],["tolérant","t-soft"]],
+  det:{"Fait aujourd'hui":["Ajoute l'article publié à l'index anti-doublon (jamais en dry-run)","Charge un export JSON manuel de Search Console si vous en déposez un","Construit le PerformanceFeedback injecté dans le prompt du Keyword Analyst au run suivant"],
+       "Prévu (v1.1)":["Adapter Google Search Console sur le port AnalyticsPort — déjà figé","Mots-clés en position 11-30 remontés comme pistes de sujets","Articles à forte impression et faible CTR signalés pour réécriture"],
+       "Pourquoi un stub":["Le port est défini dès maintenant : brancher la vraie API ne demandera qu'un nouvel adapter, sans toucher aux 9 agents."]}}
+];
+
+const grid = document.getElementById('agentGrid');
+grid.innerHTML = AGENTS.map(a => `
+  <article class="agent" tabindex="0" role="button" aria-expanded="false">
+    <div class="top"><span class="num">${a.n}</span><h4>${a.t}</h4></div>
+    <p>${a.d}</p>
+    <div class="tags">${a.tags.map(([l,c])=>`<span class="tag ${c}">${l}</span>`).join('')}</div>
+    <div class="detail">${Object.entries(a.det).map(([k,v])=>
+      `<b>${k}</b><ul>${v.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('')}</div>
+  </article>`).join('');
+
+function toggle(el){
+  const open = el.classList.toggle('on');
+  el.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+grid.querySelectorAll('.agent').forEach(el=>{
+  el.addEventListener('click', ()=>toggle(el));
+  el.addEventListener('keydown', e=>{
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(el); }
+  });
+});
+
+const tabs = document.querySelectorAll('nav.tabs button');
+const panels = ['flux','agents','decision','couches','qualite','stack','pannes'];
+tabs.forEach(btn=>btn.addEventListener('click',()=>{
+  tabs.forEach(b=>b.setAttribute('aria-selected', String(b===btn)));
+  panels.forEach(id=>{
+    document.getElementById(id).hidden = (id !== btn.dataset.t);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}));
+</script>
+</body>
+</html>

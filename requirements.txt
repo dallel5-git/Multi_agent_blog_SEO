@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dépendances — TOUTES open source et gratuites.
+# Aucun SDK vers un service payant : pas d'openai, pas d'anthropic,
+# pas de pinecone, pas de serpapi.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# --- Noyau (indispensable) ---------------------------------------------------
+requests>=2.31              # tous les appels HTTP (Gemini, Groq, Telegram, sources)
+python-dotenv>=1.0          # chargement du fichier .env
+PyYAML>=6.0                 # parsing du frontmatter des .mdx existants
+
+# --- Orchestration -----------------------------------------------------------
+langgraph>=0.2.0            # graphe d'états des 9 agents (Apache 2.0)
+
+# --- Recherche et veille (aucune clé requise) --------------------------------
+ddgs>=9.0                   # DuckDuckGo (ex-duckduckgo-search)
+pytrends>=4.9               # Google Trends
+
+# --- Anti-doublon sémantique (100 % local, CPU) ------------------------------
+sentence-transformers>=3.0  # modèle all-MiniLM-L6-v2, ~90 Mo, sans clé
+chromadb>=0.5               # vector store local sur SQLite
+
+# --- Planification -----------------------------------------------------------
+apscheduler>=3.10           # cron local toutes les 48 h
+
+# --- Image de couverture -----------------------------------------------------
+Pillow>=10.0                # image de secours si Pollinations.ai est indisponible
+                            # (Pollinations lui-même est une simple requête GET)
+
+# --- Développement (optionnel) ----------------------------------------------
+# pip install -r requirements-dev.txt

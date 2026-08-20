@@ -1,0 +1,450 @@
+[
+  {
+    "title": "[EPIC] Socle & architecture",
+    "labels": [
+      "epic",
+      "domain",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 1 — Socle & architecture\n> **Estimation :** 5 points\n\n## Contexte\n\nPoser la Clean Architecture, les entités, les value objects et les ports qui structureront tout le projet.\n\n## Tâches\n\n- [x] Créer les 4 couches domain / application / infrastructure / interfaces\n- [x] Définir la règle de dépendance vers l'intérieur\n- [x] Créer le composition root `infrastructure/config/container.py`\n\n## Critères d'acceptation\n\n- `grep -r \"infrastructure\" src/blogseo/domain/` ne renvoie rien\n- `grep -r \"infrastructure\" src/blogseo/application/` ne renvoie rien\n- Le container est le seul endroit où les couches se rencontrent\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Modéliser les entités et value objects du domaine",
+    "labels": [
+      "domain",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 1 — Socle & architecture\n> **Estimation :** 5 points\n\n## Contexte\n\nLe domaine doit décrire le métier sans dépendre d'aucun framework ni chemin disque.\n\n## Tâches\n\n- [x] Entité `Article` : sérialisation `.mdx`, comptage de mots hors code, densité de mots-clés\n- [x] Entités `Topic`, `TrendItem`/`TrendDigest`, `ReviewResult`, `PipelineRun`\n- [x] Value objects `Slug`, `Category`, `SeoMetadata`, `QualityReport`\n\n## Critères d'acceptation\n\n- `Slug.from_title()` gère accents, ponctuation, mots vides et troncature sur frontière de mot\n- `Category.coerce()` ramène toujours une valeur de l'union fermée du blog Next.js\n- Le `.mdx` produit est relu sans erreur par le parseur de frontmatter\n- Un `#` dans un bloc de code n'est pas compté comme un titre H1\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Définir tous les ports (interfaces abstraites)",
+    "labels": [
+      "domain",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 1 — Socle & architecture\n> **Estimation :** 3 points\n\n## Contexte\n\nChaque dépendance externe doit être derrière une interface, pour permettre le mode offline et les tests sans réseau.\n\n## Tâches\n\n- [x] `LLMPort`, `SearchPort`, `TrendsPort`, `TechSourcePort`, `EmbeddingPort`\n- [x] `ArticleHistoryPort`, `ArticleSourcePort`, `RunRepositoryPort`\n- [x] `ArticleWriterPort`, `GitPublisherPort`, `ImageGeneratorPort`\n- [x] `NotifierPort`, `HumanReviewPort`, `AnalyticsPort`\n\n## Critères d'acceptation\n\n- Chaque port a au moins deux implémentations (réelle + test/repli)\n- Aucun port n'importe `requests` ni aucun module d'infrastructure\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Configuration par variables d'environnement, zéro clé en dur",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 1 — Socle & architecture\n> **Estimation :** 2 points\n\n## Contexte\n\nContrainte de sécurité absolue : aucune clé d'API ne doit jamais apparaître dans le code ni dans Git.\n\n## Tâches\n\n- [x] `Settings.from_env()` avec sections typées (LLM, recherche, sources, contenu, publication, Telegram, stockage)\n- [x] `.env.example` documenté service par service, avec les URLs d'inscription gratuites\n- [x] `Settings.describe()` affiche « configurée » / « absente », jamais la valeur\n- [x] `.env` dans `.gitignore`\n\n## Critères d'acceptation\n\n- `grep -rE \"AIza|gsk_|sk-\" src/` ne renvoie que les motifs de détection de secrets\n- `blogseo check` affiche l'état de configuration sans fuite\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "[EPIC] Adapters gratuits (free tier uniquement)",
+    "labels": [
+      "epic",
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 5 points\n\n## Contexte\n\nImplémenter tous les ports avec des services dont le free tier est permanent et qui ne demandent aucune carte bancaire.\n\n## Tâches\n\n- [x] Gemini, Groq, DuckDuckGo, Tavily, pytrends, HN/Reddit/dev.to/RSS\n- [x] sentence-transformers, ChromaDB, Pollinations, Telegram, Git\n\n## Critères d'acceptation\n\n- `grep -rniE \"openai|anthropic|pinecone|serpapi\" src/ requirements.txt` ne renvoie que les commentaires d'interdiction\n- Le pipeline complet tourne sans qu'aucune carte bancaire n'ait été saisie\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Adapter LLM Google Gemini (free tier)",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 3 points\n\n## Contexte\n\nFournisseur principal. Appel REST direct plutôt qu'un SDK, pour contrôler finement la détection du 429 nécessaire au fallback.\n\n## Tâches\n\n- [x] Appel REST `generativelanguage.googleapis.com`\n- [x] Détection explicite du HTTP 429 → `QuotaExceededError`\n- [x] Extraction robuste du texte (candidats vides, `finishReason`, `blockReason`)\n- [x] Safety settings desserrés au minimum autorisé pour éviter les réponses vides\n\n## Critères d'acceptation\n\n- Un 429 lève `QuotaExceededError`, jamais une erreur générique\n- Le retry ne réessaie pas sur quota épuisé\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Adapter Groq + chaîne de fallback automatique",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 3 points\n\n## Contexte\n\nQuand Gemini atteint son quota gratuit, le pipeline doit continuer au lieu de planter.\n\n## Tâches\n\n- [x] Adapter Groq (API compatible OpenAI, appelée en REST brut, sans SDK)\n- [x] `FallbackLLM` : bascule immédiate sur quota, retry au coup suivant sur panne réseau\n- [x] Statistiques d'usage par fournisseur exposées dans le résumé de run\n\n## Critères d'acceptation\n\n- Sur 429, le fournisseur est écarté pour le reste du run\n- Sur erreur réseau, le fournisseur est retenté au prochain appel\n- Tous en échec → `AllProvidersFailedError` avec le détail de chaque échec\n- 8 tests unitaires couvrant tous les scénarios\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Rate limiter à double fenêtre, persisté sur disque",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 3 points\n\n## Contexte\n\nGemini plafonne à ~15 requêtes/minute et ~1500/jour. Encaisser des 429 gaspille le quota : il faut bloquer avant l'appel.\n\n## Tâches\n\n- [x] Fenêtre glissante minute + fenêtre journalière\n- [x] Intervalle minimal forcé entre deux appels\n- [x] Persistance de la fenêtre journalière dans `storage/rate_limits/`\n\n## Critères d'acceptation\n\n- Le quota journalier survit à un redémarrage du process\n- Quota journalier épuisé → `acquire()` renvoie `False` (déclenche la bascule) au lieu d'attendre\n- Les tests utilisent une horloge simulée et ne dorment jamais réellement\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Recherche web : DuckDuckGo principal, Tavily en repli",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 2 points\n\n## Contexte\n\nDuckDuckGo ne demande aucune clé. Tavily (1000 req/mois gratuites) sert de secours si une clé est fournie.\n\n## Tâches\n\n- [x] Adapter DuckDuckGo avec throttling anti-bannissement\n- [x] Compatibilité des deux noms de paquet (`ddgs` et `duckduckgo-search`)\n- [x] Adapter Tavily en REST brut\n- [x] `CompositeSearch` en cascade\n\n## Critères d'acceptation\n\n- Aucun moteur disponible → liste vide, jamais d'exception\n- Le délai entre requêtes est configurable via `SEARCH_DELAY_S`\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Sources de veille publiques et gratuites",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 3 points\n\n## Contexte\n\nAlimenter le Trend Scout avec des signaux réels, sans aucune clé d'API.\n\n## Tâches\n\n- [x] Hacker News via l'API Firebase, avec filtrage sur les thèmes du blog\n- [x] Reddit via les endpoints `.json` publics (User-Agent explicite obligatoire)\n- [x] dev.to via `/api/articles`\n- [x] Source RSS/Atom générique (Product Hunt, blog n8n, médias tunisiens)\n\n## Critères d'acceptation\n\n- Une source indisponible est journalisée puis ignorée\n- Toutes les sources mortes → avertissement, le pipeline continue\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Anti-doublon sémantique : embeddings locaux + ChromaDB",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 5 points\n\n## Contexte\n\nEmpêcher de republier un sujet déjà traité, sans appeler un service d'embeddings payant.\n\n## Tâches\n\n- [x] `sentence-transformers` (`all-MiniLM-L6-v2`) en local sur CPU\n- [x] ChromaDB persistant sur SQLite dans `storage/chroma/`\n- [x] Repli : encodeur par hachage de n-grammes + index JSON si les paquets manquent\n- [x] Réindexation systématique au démarrage de chaque run\n\n## Critères d'acceptation\n\n- Un quasi-doublon obtient un score de similarité > 0.85\n- Un sujet neuf obtient un score < 0.5\n- Les tests tournent sans télécharger le modèle de 90 Mo\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Image de couverture : Pollinations.ai + repli local Pillow",
+    "labels": [
+      "infra",
+      "free-tier",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 2 — Adapters gratuits\n> **Estimation :** 2 points\n\n## Contexte\n\nAPI d'image gratuite et sans clé, avec une image de secours aux couleurs du blog si elle est indisponible.\n\n## Tâches\n\n- [x] Adapter Pollinations (GET avec prompt encodé, seed déterministe par slug)\n- [x] Image de secours : dégradé indigo/cyan + titre, générée avec Pillow\n- [x] Copie de l'image dans `public/covers/` du blog au moment de la publication\n\n## Critères d'acceptation\n\n- Pollinations indisponible → image locale générée, le run n'échoue jamais\n- Pillow absent → article publié sans couverture, avec un avertissement\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "[EPIC] Les 9 agents du pipeline",
+    "labels": [
+      "epic",
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 8 points\n\n## Contexte\n\nImplémenter les 9 agents, chacun dans son module, avec un prompt système documenté en français.\n\n## Tâches\n\n- [x] Classe de base `Agent` : trace, chronométrage, gestion critique/non critique\n- [x] Les 9 agents, communiquant uniquement via `PipelineState`\n\n## Critères d'acceptation\n\n- Aucun agent n'importe un autre agent\n- Ajouter un agent ne demande de toucher que `pipeline_spec.py` et le container\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 1 — Trend Scout (veille tech mondiale)",
+    "labels": [
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 3 points\n\n## Contexte\n\nCollecter les signaux tech mondiaux et les regrouper en thèmes exploitables pour le blog.\n\n## Tâches\n\n- [x] Collecte isolée par source (une panne n'affecte pas les autres)\n- [x] Synthèse LLM en thèmes hiérarchisés (fraîcheur, potentiel tutoriel, transposabilité en Tunisie)\n\n## Critères d'acceptation\n\n- Le LLM ne cite que des URLs présentes dans les signaux fournis\n- Agent non critique : une veille vide n'arrête pas le run\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 2 — Tunisia Watcher (veille locale tunisienne)",
+    "labels": [
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 3 points\n\n## Contexte\n\nL'angle tunisien est l'ADN éditorial du blog. Il faut de la matière locale réelle : chiffres, contraintes, acteurs, actualités.\n\n## Tâches\n\n- [x] Recherche web ciblée sur des requêtes tunisiennes (région `fr-tn`)\n- [x] Flux RSS de médias tunisiens (configurables via `TUNISIA_RSS_FEEDS`)\n- [x] Google Trends géolocalisé TN\n- [x] Structuration LLM en faits / points de douleur / angles\n\n## Critères d'acceptation\n\n- Le LLM ne peut citer que des faits présents dans les résultats fournis\n- Le champ `coverage_gap` signale explicitement ce que la recherche n'a pas couvert\n- Aucune invention de programme gouvernemental ou de statistique\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 3 — Keyword Analyst (sujet + anti-doublon)",
+    "labels": [
+      "agent",
+      "seo",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 5 points\n\n## Contexte\n\nAgent le plus décisif : il croise les deux veilles, choisit UN sujet et garantit qu'il n'est pas un doublon.\n\n## Tâches\n\n- [x] Croisement veille mondiale + veille tunisienne + Trends + feedback de performance\n- [x] Sortie JSON : titre, angle tunisien, catégorie, mots-clés, plan, sources\n- [x] Vérification d'originalité contre le vector store\n- [x] Jusqu'à 3 tentatives, avec température croissante et liste des sujets déjà rejetés\n\n## Critères d'acceptation\n\n- La catégorie renvoyée appartient toujours à l'union fermée du blog\n- Un sujet au-dessus de `DUPLICATE_THRESHOLD` est refusé et un autre est demandé\n- Échec des 3 tentatives → `DuplicateTopicError` explicite\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 4 — Content Writer (rédaction et révision)",
+    "labels": [
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 5 points\n\n## Contexte\n\nRédiger le corps de l'article en français, en 1200-2000 mots, avec un angle tunisien réel. C'est aussi la cible des deux boucles de feedback.\n\n## Tâches\n\n- [x] Mode première rédaction à partir du brief\n- [x] Mode révision à partir des consignes du Quality Gate (température plus basse)\n- [x] Nettoyage de la sortie : frontmatter parasite retiré, H1 dégradé en H2\n- [x] Prompt listant les composants MDX autorisés du blog\n\n## Critères d'acceptation\n\n- L'article est intégralement en français, commentaires de code compris\n- Aucun frontmatter ni H1 dans la sortie\n- Le mode révision corrige sans tout réécrire\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 5 — Technical Reviewer (exactitude technique)",
+    "labels": [
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 3 points\n\n## Contexte\n\nEmpêcher la publication d'une information techniquement fausse ou d'un secret en clair.\n\n## Tâches\n\n- [x] Vérification HTTP réelle des liens cités (HEAD puis GET, en parallèle)\n- [x] Détection déterministe de secrets (Google, OpenAI, Groq, GitHub, Telegram, Slack)\n- [x] Relecture LLM du code et des affirmations factuelles\n\n## Critères d'acceptation\n\n- Un secret en clair est un finding bloquant\n- Un lien mort est un avertissement, pas un blocage\n- Agent non critique : un échec de relecture n'annule pas le run\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 6 — SEO Editor (métadonnées et maillage)",
+    "labels": [
+      "agent",
+      "seo",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 3 points\n\n## Contexte\n\nOptimiser meta title, meta description, slug, alt-text et maillage interne. Le LLM propose, l'agent valide et corrige de façon déterministe.\n\n## Tâches\n\n- [x] Sortie JSON validée puis corrigée (longueurs, présence du mot-clé)\n- [x] Slug dérivé et dédoublonné contre les articles existants\n- [x] Maillage interne restreint aux slugs réellement existants\n- [x] Section « À lire aussi » ajoutée en fin d'article\n\n## Critères d'acceptation\n\n- Un slug interne inventé par le LLM est retiré et journalisé\n- Aucune métadonnée non conforme ne sort de l'agent\n- Le mot-clé est considéré présent si tous ses mots le sont (pas de titre artificiel)\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 7 — Quality Gate 100 % déterministe",
+    "labels": [
+      "agent",
+      "test",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 5 points\n\n## Contexte\n\nLa porte de qualité doit être reproductible, testable et impossible à « charmer » par un modèle. Donc : aucun appel LLM.\n\n## Tâches\n\n- [x] 20 contrôles : langue française, longueur, structure, mots-clés, angle tunisien, SEO, originalité, relecture technique, CTA\n- [x] Distinction bloquant / avertissement\n- [x] Génération de consignes de révision structurées pour le Content Writer\n\n## Critères d'acceptation\n\n- Aucun appel LLM dans l'agent\n- Un article en anglais est bloqué avec une consigne de réécriture explicite\n- Les consignes distinguent `[BLOQUANT]` et `[À améliorer]`\n- Couverture de tests complète, sans réseau\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 8 — Publisher (couverture, validation, publication)",
+    "labels": [
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 5 points\n\n## Contexte\n\nGénère la couverture, demande la décision humaine, écrit le fichier et pousse sur Git selon la décision.\n\n## Tâches\n\n- [x] Génération de couverture (jamais bloquante)\n- [x] Brouillon systématique dans `storage/drafts/` avant toute décision\n- [x] Aperçu Telegram avec toutes les informations clés\n- [x] Application de la décision : ✅ push, ❌ local, 🔁 réécriture\n\n## Critères d'acceptation\n\n- Un brouillon existe toujours, même si Telegram et Git échouent\n- En `--dry-run`, le dossier du blog n'est jamais touché\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Agent 9 — Analytics Tracker (stub) et réindexation",
+    "labels": [
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 3 — Les 9 agents\n> **Estimation :** 2 points\n\n## Contexte\n\nRéindexe le nouvel article pour l'anti-doublon et prépare la boucle de rétroaction performance.\n\n## Tâches\n\n- [x] Réindexation du nouvel article après écriture réussie\n- [x] Ingestion d'un export JSON manuel de Search Console (optionnel)\n- [x] Construction du `PerformanceFeedback` pour le prochain run\n\n## Critères d'acceptation\n\n- Pas d'indexation en dry-run\n- Le port `AnalyticsPort` est figé : brancher la vraie API ne demandera qu'un adapter\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "[EPIC] Orchestration du pipeline",
+    "labels": [
+      "epic",
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 4 — Orchestration\n> **Estimation :** 5 points\n\n## Contexte\n\nDécrire la topologie une seule fois et l'exécuter de deux façons, avec les boucles de feedback déclaratives.\n\n## Tâches\n\n- [x] `pipeline_spec.py` : nœuds, arêtes linéaires, arêtes conditionnelles\n- [x] Exécuteur LangGraph et exécuteur séquentiel\n\n## Critères d'acceptation\n\n- Les deux exécuteurs consomment la même description\n- Les fonctions de routage sont testées isolément\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Graphe LangGraph avec deux boucles de feedback",
+    "labels": [
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 4 — Orchestration\n> **Estimation :** 5 points\n\n## Contexte\n\nLe pipeline n'est pas linéaire : Quality Gate → Content Writer, et bouton 🔁 → Content Writer.\n\n## Tâches\n\n- [x] Un nœud par agent, arêtes linéaires et conditionnelles\n- [x] État typé via un `TypedDict` (et non `dict`, qui provoque une erreur de canal racine)\n- [x] Diagramme Mermaid exposé par `blogseo graph`\n- [x] Bornage : `recursion_limit`, `MAX_REVISIONS`\n\n## Critères d'acceptation\n\n- `blogseo graph` produit un Mermaid montrant les deux boucles\n- Aucune boucle infinie possible\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Exécuteur séquentiel de secours",
+    "labels": [
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 4 — Orchestration\n> **Estimation :** 2 points\n\n## Contexte\n\nL'absence de LangGraph ne doit jamais bloquer le pipeline, et les tests doivent tourner sans cette dépendance.\n\n## Tâches\n\n- [x] Parcours du graphe par une boucle simple\n- [x] Garde-fou `MAX_NODE_VISITS`\n- [x] Sélection automatique par `build_orchestrator()` avec repli silencieux\n\n## Critères d'acceptation\n\n- Comportement identique à LangGraph sur un run nominal\n- Repli automatique si LangGraph est absent ou si la compilation échoue\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Gestion d'erreurs, retry et modes dégradés",
+    "labels": [
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 4 — Orchestration\n> **Estimation :** 3 points\n\n## Contexte\n\nLe pipeline tourne sans surveillance toutes les 48 h : chaque panne doit avoir un comportement défini.\n\n## Tâches\n\n- [x] Retry avec backoff exponentiel et jitter sur tous les appels réseau\n- [x] `safe_call()` pour les appels non critiques (sources de veille)\n- [x] Distinction agents critiques / non critiques\n- [x] Notification Telegram en cas d'échec du run\n\n## Critères d'acceptation\n\n- Le tableau des pannes de `docs/ARCHITECTURE.md` est complet et vérifié\n- Aucune panne d'un service tiers ne fait perdre le travail déjà produit\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "[EPIC] Publication et validation humaine",
+    "labels": [
+      "epic",
+      "agent",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 5 — Publication & validation humaine\n> **Estimation :** 8 points\n\n## Contexte\n\nAucun article ne part en ligne sans un clic humain explicite. C'est la règle métier centrale du projet.\n\n## Tâches\n\n- [x] Bot Telegram à trois boutons\n- [x] Écriture atomique du `.mdx`\n- [x] Publication Git ciblée\n\n## Critères d'acceptation\n\n- ✅ écrit + commit + push ; ❌ écrit seulement ; 🔁 ne touche pas au blog\n- Comportement par défaut en cas de panne : ne pas publier\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Bot Telegram à trois boutons de décision",
+    "labels": [
+      "agent",
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 5 — Publication & validation humaine\n> **Estimation :** 5 points\n\n## Contexte\n\nL'auteur reçoit l'article et décide. Implémenté en REST brut (pas de `python-telegram-bot`, pas d'asyncio).\n\n## Tâches\n\n- [x] Aperçu HTML : titre, description, slug, catégorie, mots, score qualité, extrait\n- [x] Envoi du `.mdx` complet en pièce jointe\n- [x] Clavier inline à 3 boutons, retiré après le clic\n- [x] Long-polling `getUpdates` avec offset persisté\n- [x] `NullNotifier` quand Telegram n'est pas configuré\n\n## Critères d'acceptation\n\n- Le clavier disparaît après le clic (pas de double décision)\n- L'offset persiste : un vieux callback n'est jamais rejoué\n- Aperçu sous la limite de 4096 caractères de l'API\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Écriture .mdx atomique et publication Git ciblée",
+    "labels": [
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 5 — Publication & validation humaine\n> **Estimation :** 3 points\n\n## Contexte\n\nNext.js ne doit jamais lire un fichier à moitié écrit, et le bot ne doit jamais emporter le travail en cours de l'auteur.\n\n## Tâches\n\n- [x] Écriture atomique : fichier temporaire + `os.replace`\n- [x] Suffixage par la date en cas de collision de slug\n- [x] `git add` fichier par fichier, jamais `git add -A`\n- [x] Identité Git posée en configuration locale au dépôt\n\n## Critères d'acceptation\n\n- Aucun écrasement d'un article existant\n- Un push refusé conserve le commit local et affiche la commande à lancer\n- Le fichier est écrit même si Git échoue\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Modes --dry-run et --offline",
+    "labels": [
+      "infra",
+      "test",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 5 — Publication & validation humaine\n> **Estimation :** 2 points\n\n## Contexte\n\nPouvoir tester tout le pipeline sans risque de publication accidentelle, et même sans clé ni réseau.\n\n## Tâches\n\n- [x] `--dry-run` : brouillon seul, aucune écriture dans le blog, aucun push\n- [x] `--offline` : LLM factice, ni recherche web, ni Telegram, ni génération d'image\n- [x] `--print` pour afficher l'article final dans le terminal\n\n## Critères d'acceptation\n\n- `blogseo run --dry-run --offline` produit un article complet sans aucune clé\n- Le dossier du blog n'est jamais touché en dry-run\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "[EPIC] Automatisation et exploitation",
+    "labels": [
+      "epic",
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 6 — Automatisation & exploitation\n> **Estimation :** 5 points\n\n## Contexte\n\nFaire tourner le pipeline tous les 2 jours et pouvoir observer ce qui s'est passé.\n\n## Tâches\n\n- [x] Planificateur local 48 h\n- [x] Unité systemd utilisateur\n- [x] CLI d'exploitation\n- [x] Journalisation\n\n## Critères d'acceptation\n\n- Le pipeline tourne sans intervention et laisse une trace exploitable\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Planificateur local toutes les 48 h + timer systemd",
+    "labels": [
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 6 — Automatisation & exploitation\n> **Estimation :** 3 points\n\n## Contexte\n\nAPScheduler plutôt que GitHub Actions : le bouton ❌ doit écrire sur le disque de l'auteur, ce qu'un runner cloud ne peut pas faire.\n\n## Tâches\n\n- [x] `BlockingScheduler` avec `IntervalTrigger` de 48 h\n- [x] `max_instances=1`, `coalesce=True`, `misfire_grace_time=3600`\n- [x] Repli en boucle `sleep` si APScheduler est absent\n- [x] Script d'installation d'un service et d'un timer systemd utilisateur\n\n## Critères d'acceptation\n\n- Un run manqué se rattrape une fois, pas cinq fois d'affilée\n- Le timer survit au redémarrage et fonctionne hors session graphique\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "CLI complète et journalisation",
+    "labels": [
+      "infra",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 6 — Automatisation & exploitation\n> **Estimation :** 3 points\n\n## Contexte\n\nPouvoir vérifier la configuration, lancer, inspecter et diagnostiquer sans lire le code.\n\n## Tâches\n\n- [x] Commandes `run`, `check`, `index`, `graph`, `runs`, `show`\n- [x] Logs console colorés + fichier rotatif 2 Mo × 5\n- [x] Bibliothèques tierces bavardes réduites au niveau WARNING\n- [x] Persistance d'un JSON par run\n\n## Critères d'acceptation\n\n- `blogseo check` diagnostique clés, dépendances et chemins\n- `blogseo show <run_id>` détaille chaque étape avec sa durée\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "[EPIC] Tests et documentation",
+    "labels": [
+      "epic",
+      "test",
+      "docs",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 7 — Tests & documentation\n> **Estimation :** 5 points\n\n## Contexte\n\nLe projet doit être reprenable par un tiers — ou par un agent IA — sans explication orale.\n\n## Tâches\n\n- [x] Tests unitaires des fonctions critiques\n- [x] README, MEMOIRE.md, ARCHITECTURE.md, ADR\n\n## Critères d'acceptation\n\n- La suite de tests passe sans réseau et sans clé d'API\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Tests unitaires des fonctions critiques",
+    "labels": [
+      "test",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 7 — Tests & documentation\n> **Estimation :** 5 points\n\n## Contexte\n\nCouvrir en priorité ce dont la défaillance serait invisible : la porte de qualité, l'anti-doublon, le parsing SEO et la règle de publication.\n\n## Tâches\n\n- [x] Quality Gate : longueur, structure, mots-clés, angle tunisien, intégration relecture\n- [x] Contrôle de langue française (article anglais bloqué)\n- [x] Anti-doublon : encodeur, index, seuil de décision\n- [x] Parsing SEO : frontmatter, extraction JSON tolérante, normalisation de catégorie\n- [x] Chaîne LLM : bascule sur quota, sur erreur réseau, épuisement\n- [x] Rate limiter avec horloge simulée\n- [x] Décision du Publisher : les 3 boutons, dry-run, expiration, push refusé\n- [x] Routage des deux boucles de feedback\n\n## Critères d'acceptation\n\n- La suite passe en moins de 2 secondes\n- Aucun test n'appelle le réseau ni ne télécharge de modèle\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "README, MEMOIRE.md, ARCHITECTURE.md et ADR",
+    "labels": [
+      "docs",
+      "v1"
+    ],
+    "milestone": "v1.0 — Pipeline opérationnel",
+    "body": "> **Epic :** EPIC 7 — Tests & documentation\n> **Estimation :** 3 points\n\n## Contexte\n\nMEMOIRE.md est la mémoire du projet : contexte, décisions prises et pièges déjà rencontrés, pour ne pas les refaire.\n\n## Tâches\n\n- [x] README : installation, clés gratuites pas à pas, premier lancement, dépannage\n- [x] MEMOIRE.md : contexte, contraintes, pièges du blog Next.js, décisions datées\n- [x] ARCHITECTURE.md : couches, ports, agents, boucles, modes dégradés\n- [x] 5 ADR : Clean Architecture, LangGraph, stack gratuite, règle de publication, scheduler local\n\n## Critères d'acceptation\n\n- Un tiers peut installer et lancer le projet sans explication orale\n- Chaque décision structurante est datée et justifiée\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "Brancher Google Search Console sur AnalyticsPort",
+    "labels": [
+      "enhancement",
+      "agent",
+      "seo",
+      "v1.1"
+    ],
+    "milestone": "v1.1 — Qualité & mesure",
+    "body": "> **Epic :** EPIC 8 — Évolutions\n> **Estimation :** 5 points\n\n## Contexte\n\nLe port `AnalyticsPort` et l'agent 9 sont déjà en place. Il ne manque que l'adapter réel pour fermer la boucle de rétroaction performance.\n\n## Tâches\n\n- [ ] Adapter `SearchConsoleAnalytics` (OAuth, API gratuite)\n- [ ] Mapping des requêtes réelles vers `PerformanceFeedback`\n- [ ] Injection du feedback dans le prompt du Keyword Analyst\n- [ ] Documentation de la création des identifiants OAuth gratuits\n\n## Critères d'acceptation\n\n- Aucune modification des 9 agents existants n'est nécessaire\n- Les mots-clés en position 11-30 remontent comme pistes de sujets\n- Les articles à forte impression et faible CTR sont signalés\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Enrichir les sources de veille tunisiennes",
+    "labels": [
+      "enhancement",
+      "agent",
+      "v1.1"
+    ],
+    "milestone": "v1.1 — Qualité & mesure",
+    "body": "> **Epic :** EPIC 8 — Évolutions\n> **Estimation :** 3 points\n\n## Contexte\n\nLe champ `coverage_gap` du Tunisia Watcher signale régulièrement un manque de matière locale.\n\n## Tâches\n\n- [ ] Identifier 3 à 5 flux RSS de médias tech tunisiens fiables\n- [ ] Les documenter dans `.env.example`\n- [ ] Ajouter des requêtes de recherche plus spécifiques (secteurs, villes, programmes)\n- [ ] Mesurer l'apport sur 3 runs\n\n## Critères d'acceptation\n\n- `coverage_gap` devient vide sur 3 runs consécutifs\n- Au moins 5 faits locaux sourcés par run\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Tableau de bord HTML local des runs",
+    "labels": [
+      "enhancement",
+      "v1.1"
+    ],
+    "milestone": "v1.1 — Qualité & mesure",
+    "body": "> **Epic :** EPIC 8 — Évolutions\n> **Estimation :** 3 points\n\n## Contexte\n\nLes runs sont persistés en JSON, mais les relire à la main est fastidieux.\n\n## Tâches\n\n- [ ] Génération d'une page HTML statique depuis `storage/runs/*.json`\n- [ ] Historique, scores de qualité, décisions prises, durées par agent\n- [ ] Commande `blogseo dashboard`\n\n## Critères d'acceptation\n\n- La page s'ouvre sans serveur, en local\n- Elle met en évidence les runs en échec et les articles restés non publiés\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Agent 10 — Social Writer (LinkedIn + X)",
+    "labels": [
+      "enhancement",
+      "agent",
+      "v2.0"
+    ],
+    "milestone": "v2.0 — Diffusion",
+    "body": "> **Epic :** EPIC 8 — Évolutions\n> **Estimation :** 5 points\n\n## Contexte\n\nGénérer un post LinkedIn et un thread X à partir de l'article publié, pour amplifier la diffusion.\n\n## Tâches\n\n- [ ] Nouvel agent `SocialWriterAgent` après le Publisher\n- [ ] Prompt système dédié, adapté aux codes de chaque plateforme\n- [ ] Envoi du texte sur Telegram pour copier-coller (pas de publication automatique)\n\n## Critères d'acceptation\n\n- S'ajoute sans modifier aucun des 9 agents existants — preuve de la modularité\n- Ne s'exécute que si l'article a réellement été publié\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Mode « série d'articles »",
+    "labels": [
+      "enhancement",
+      "seo",
+      "v2.0"
+    ],
+    "milestone": "v2.0 — Diffusion",
+    "body": "> **Epic :** EPIC 8 — Évolutions\n> **Estimation :** 8 points\n\n## Contexte\n\nProduire une série de 3 à 5 articles liés entre eux, avec un maillage interne croisé, plutôt que des articles isolés.\n\n## Tâches\n\n- [ ] Planification d'une série par le Keyword Analyst\n- [ ] Persistance de la série entre les runs\n- [ ] Maillage interne croisé automatique entre les articles de la série\n\n## Critères d'acceptation\n\n- Chaque article de la série lie les précédents et est lié par les suivants\n- L'anti-doublon reste actif à l'intérieur de la série\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Régénération des articles sous-performants",
+    "labels": [
+      "enhancement",
+      "seo",
+      "v2.0"
+    ],
+    "milestone": "v2.0 — Diffusion",
+    "body": "> **Epic :** EPIC 8 — Évolutions\n> **Estimation :** 5 points\n\n## Contexte\n\nUn article avec beaucoup d'impressions et peu de clics a un problème de titre ou de description, pas de fond.\n\n## Tâches\n\n- [ ] Détection via `PerformanceFeedback.underperforming_slugs`\n- [ ] Mode `blogseo refresh <slug>` : réécriture ciblée du titre et de la description\n- [ ] Validation Telegram avant modification, comme pour un nouvel article\n\n## Critères d'acceptation\n\n- L'article existant n'est jamais modifié sans validation humaine\n- Le fichier est mis à jour sur place, sans changement de slug\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  }
+]

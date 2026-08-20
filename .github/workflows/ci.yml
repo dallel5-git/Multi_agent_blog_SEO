@@ -1,0 +1,144 @@
+# Intégration continue — tests, lint et vérification de la contrainte « zéro coût ».
+#
+# ⚠️ Ce workflow NE PUBLIE PAS d'article. La publication tourne sur la machine
+# de l'auteur (voir docs/adr/0005), parce que le bouton ❌ de Telegram doit
+# écrire dans /home/oussama/.../oussama-blog/content/articles — un runner GitHub
+# n'a pas accès à ce disque.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Tests unitaires (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Installer les dépendances de test
+        # On n'installe volontairement PAS chromadb ni sentence-transformers :
+        # les tests doivent passer sur les replis, sans télécharger 90 Mo de modèle.
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov ruff requests PyYAML python-dotenv
+
+      - name: Lancer les tests
+        run: python -m pytest -v --cov --cov-report=term-missing
+
+  lint:
+    name: Analyse statique
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install ruff
+      - run: ruff check src tests
+
+  architecture:
+    name: Règle de dépendance (Clean Architecture)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Le domaine ne doit dépendre de rien
+        run: |
+          if grep -rn "infrastructure" src/blogseo/domain/; then
+            echo "::error::La couche domain importe la couche infrastructure."
+            exit 1
+          fi
+          echo "✔ domain/ est isolé"
+
+      - name: L'application ne doit connaître que les ports
+        run: |
+          if grep -rn "from ...infrastructure\|from blogseo.infrastructure" src/blogseo/application/; then
+            echo "::error::La couche application importe la couche infrastructure."
+            exit 1
+          fi
+          echo "✔ application/ ne dépend que des ports"
+
+  free-tier:
+    name: Contrainte « 100 % gratuit »
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aucun SDK de service payant
+        run: |
+          if grep -rniE "^(openai|anthropic|pinecone|serpapi|weaviate-client)" requirements.txt pyproject.toml; then
+            echo "::error::Une dépendance vers un service payant a été introduite."
+            exit 1
+          fi
+          if grep -rniE "import (openai|anthropic|pinecone)" src/; then
+            echo "::error::Un SDK de service payant est importé dans le code."
+            exit 1
+          fi
+          echo "✔ Aucune dépendance payante"
+
+      - name: Aucune clé d'API en dur
+        run: |
+          # On cherche des clés réelles, pas les motifs de détection du reviewer.
+          if grep -rnE "AIza[0-9A-Za-z_-]{30,}" src/ --include="*.py" | grep -v "_SECRET_PATTERNS" | grep -v "re.compile"; then
+            echo "::error::Une clé d'API semble codée en dur."
+            exit 1
+          fi
+          echo "✔ Aucune clé en dur"
+
+      - name: Le fichier .env n'est pas versionné
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::Le fichier .env est versionné !"
+            exit 1
+          fi
+          echo "✔ .env non versionné"
+
+  smoke:
+    name: Run complet hors ligne
+    runs-on: ubuntu-latest
+    needs: [tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: |
+          python -m pip install --upgrade pip
+          pip install requests PyYAML python-dotenv
+          pip install -e .
+
+      - name: Pipeline complet sans clé ni réseau
+        env:
+          BLOG_CONTENT_DIR: ${{ github.workspace }}/.ci-blog/content/articles
+          BLOG_REPO_DIR: ${{ github.workspace }}/.ci-blog
+          HUMAN_REVIEW: "false"
+        run: |
+          mkdir -p "$BLOG_CONTENT_DIR"
+          python -m blogseo.interfaces.cli run --dry-run --offline
+
+      - name: Vérifier qu'un brouillon a bien été produit
+        run: |
+          test -n "$(ls -A storage/drafts/*.mdx 2>/dev/null)" || {
+            echo "::error::Aucun brouillon .mdx généré."
+            exit 1
+          }
+          echo "✔ Brouillon généré :"
+          ls -la storage/drafts/

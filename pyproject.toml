@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blogseo-agents"
+version = "1.0.0"
+description = "Système multi-agents (LangGraph) de génération d'articles de blog SEO — 100 % free tier"
+readme = "README.md"
+# 3.10 suffit : le code n'utilise aucune nouveauté 3.11 (pas de StrEnum,
+# pas de typing.Self, pas de datetime.UTC). Vérifié sur Ubuntu 22.04.
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Oussama Dallel" }]
+keywords = ["seo", "multi-agents", "langgraph", "blog", "automation", "tunisia"]
+
+# Toutes les dépendances sont open source et gratuites.
+# Aucun SDK d'un service payant (pas d'openai, pas d'anthropic, pas de pinecone).
+dependencies = [
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+    "PyYAML>=6.0",
+    "langgraph>=0.2.0",
+    "ddgs>=9.0",
+    "pytrends>=4.9",
+    "sentence-transformers>=3.0",
+    "chromadb>=0.5",
+    "apscheduler>=3.10",
+    "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+blogseo = "blogseo.interfaces.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+markers = [
+    "integration: tests nécessitant le réseau ou des clés d'API",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",   # longueur de ligne : gérée par line-length ci-dessus
+    "B008",   # appel de fonction en valeur par défaut : voulu pour les factories
+    # `class X(str, Enum)` est délibéré et NE DOIT PAS devenir `StrEnum` :
+    # ces énumérations sont sérialisées telles quelles en JSON (runs persistés,
+    # callback_data Telegram, frontmatter) et reconstruites par `X("valeur")`.
+    # `StrEnum` changerait le comportement de `str()` sur certaines versions.
+    "UP042",
+]
+
+[tool.coverage.run]
+source = ["src/blogseo"]
+omit = ["*/__init__.py"]
