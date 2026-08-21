@@ -59,6 +59,25 @@ class FakeLLM(LLMPort):
     def _respond(self, system_prompt: str, user_prompt: str, json_mode: bool) -> str:
         role = system_prompt.lower()
 
+        if "planification d'une série" in role:
+            match = re.search(r"NOMBRE D'ARTICLES ATTENDU\n(\d+)", user_prompt)
+            size = int(match.group(1)) if match else 3
+            topics = [
+                {
+                    "title": f"Sujet {i} de la série (exemple hors ligne)",
+                    "angle": "Angle tunisien concret, exemple généré hors ligne.",
+                    "category": "n8n",
+                    "primary_keyword": f"mot-clé exemple {i}",
+                    "secondary_keywords": ["mot-clé secondaire"],
+                    "outline": ["Introduction", "Mise en place", "Conclusion"],
+                    "rationale": "Exemple généré par le LLM factice (mode hors ligne).",
+                }
+                for i in range(1, size + 1)
+            ]
+            return json.dumps(
+                {"series_title": "Série d'exemple (LLM factice)", "topics": topics}, ensure_ascii=False
+            )
+
         if "keyword analyst" in role or "analyste seo" in role:
             return json.dumps({
                 "title": "Automatiser sa prospection avec n8n : le guide pour les PME tunisiennes",

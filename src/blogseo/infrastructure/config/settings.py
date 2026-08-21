@@ -282,9 +282,13 @@ class StorageSettings:
     def rate_limits(self) -> Path:
         return self.root / "rate_limits"
 
+    @property
+    def series(self) -> Path:
+        return self.root / "series"
+
     def ensure(self) -> None:
         for path in (self.drafts, self.pending, self.runs, self.logs,
-                     self.chroma, self.covers, self.rate_limits):
+                     self.chroma, self.covers, self.rate_limits, self.series):
             path.mkdir(parents=True, exist_ok=True)
 
 

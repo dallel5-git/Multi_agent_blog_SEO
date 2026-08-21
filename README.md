@@ -292,9 +292,20 @@ systemctl --user stop    blogseo.timer     # mettre en pause
 | `blogseo show <run_id>` | Détaille un run étape par étape |
 | `blogseo dashboard` | Génère un tableau de bord HTML local (`storage/dashboard.html`) |
 | `blogseo dashboard --open` | Idem, puis l'ouvre dans le navigateur |
+| `blogseo series start "<thème>" --size N` | Planifie une série de 3 à 5 articles liés (anti-doublon inclus) |
+| `blogseo series list` | Liste les séries planifiées |
+| `blogseo series show <series_id>` | Détaille une série (statut de chaque article) |
 
 Équivalents `make` : `check`, `offline`, `dry-run`, `run`, `index`, `graph`,
 `runs`, `dashboard`, `scheduler`, `test`, `lint`.
+
+**Mode série** (`blogseo series start`) : planifie 3 à 5 articles liés en une
+seule fois, puis chaque `blogseo run` normal (manuel ou via le scheduler 48h)
+consomme automatiquement le prochain sujet de la série active — aucun flag
+supplémentaire à ajouter à `run`. Chaque article publié lie les précédents de
+la série et, une fois réellement poussé sur Git, met à jour les articles déjà
+publiés pour y ajouter un lien vers le nouveau (voir
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), section « Mode série »).
 
 ---
 

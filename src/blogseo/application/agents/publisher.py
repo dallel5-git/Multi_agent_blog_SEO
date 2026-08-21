@@ -20,7 +20,14 @@ from pathlib import Path
 from ...domain.entities.pipeline_run import Decision, RunStatus
 from ...domain.errors import PublicationError
 from ...domain.ports.notifications import HumanReviewPort, NotifierPort
-from ...domain.ports.publishing import ArticleWriterPort, GitPublisherPort, ImageGeneratorPort
+from ...domain.ports.publishing import (
+    ArticleWriterPort,
+    GitPublisherPort,
+    ImageGeneratorPort,
+    SeriesBacklinkPort,
+)
+from ...domain.ports.repositories import SeriesRepositoryPort
+from ...shared.series_linking import upsert_series_section
 from ...shared.text import truncate
 from ..dto.pipeline_state import PipelineState
 from ..prompts.reviewing import cover_image_prompt
@@ -51,6 +58,8 @@ class PublisherAgent(Agent):
         default_on_timeout: Decision = Decision.REJECT,
         commit_prefix: str = "content:",
         blog_url: str = "",
+        series_repository: SeriesRepositoryPort | None = None,
+        series_linker: SeriesBacklinkPort | None = None,
     ) -> None:
         super().__init__()
         self.writer = writer
@@ -67,6 +76,8 @@ class PublisherAgent(Agent):
         self.default_on_timeout = default_on_timeout
         self.commit_prefix = commit_prefix
         self.blog_url = blog_url.rstrip("/")
+        self.series_repository = series_repository
+        self.series_linker = series_linker
 
     # ------------------------------------------------------------------ #
     def run(self, state: PipelineState) -> PipelineState:
@@ -104,10 +115,15 @@ class PublisherAgent(Agent):
             return state
 
         # 5. Écriture dans le blog — commune aux décisions ✅ et ❌.
+        if state.series_id and self.series_repository is not None:
+            article.body_markdown = self._inject_series_section(state, article)
         published = self.writer.write(article, destination=self.blog_content_dir, overwrite=False)
         state.published_path = str(published.path)
         state.run.published_path = str(published.path)
         self.logger.info("Article écrit dans le blog : %s", published.path)
+
+        if state.series_id and self.series_repository is not None:
+            self._mark_series_written(state, article)
 
         paths_to_commit = [published.path]
         cover_target = self._copy_cover_to_blog(state)
@@ -198,6 +214,9 @@ class PublisherAgent(Agent):
             self._notify_local_save(state, extra="⚠️ Dépôt Git non configuré : push impossible.")
             return
 
+        if state.series_id and self.series_repository is not None:
+            paths = paths + self._link_series_backward(state)
+
         message = f"{self.commit_prefix} {state.article.seo.meta_title}".strip()
         result = self.git.commit_and_push(paths, message)
         state.commit_sha = result.commit_sha
@@ -220,6 +239,50 @@ class PublisherAgent(Agent):
                 f"⚠️ <b>Push impossible</b>\n{self._escape(result.message)}\n\n"
                 f"Le fichier est bien écrit dans <code>{state.published_path}</code>."
             )
+
+    # ------------------------------------------------------------------ #
+    # Mode série (issue #41)
+    # ------------------------------------------------------------------ #
+    def _inject_series_section(self, state: PipelineState, article) -> str:
+        """Ajoute, dans le nouvel article, les liens vers les épisodes déjà publiés."""
+        series = self.series_repository.get(state.series_id)
+        if series is None:
+            return article.body_markdown
+        entries = [(t.slug, t.title) for t in series.published_topics() if t.slug]
+        return upsert_series_section(article.body_markdown, entries)
+
+    def _mark_series_written(self, state: PipelineState, article) -> None:
+        """Empêche la file d'attente de reservir ce sujet, même en dry-run/REJECT."""
+        series = self.series_repository.get(state.series_id)
+        if series is None or not (0 <= state.series_topic_index < len(series.topics)):
+            return
+        item = series.topics[state.series_topic_index]
+        item.status = "written"
+        item.slug = article.slug.value
+        self.series_repository.save(series)
+
+    def _link_series_backward(self, state: PipelineState) -> list[Path]:
+        """Marque le sujet publié et met à jour les épisodes précédents avec un lien
+        vers ce nouvel article. Renvoie les chemins modifiés, à inclure dans le commit."""
+        series = self.series_repository.get(state.series_id)
+        if series is None or not (0 <= state.series_topic_index < len(series.topics)):
+            return []
+        item = series.topics[state.series_topic_index]
+        item.status = "published"
+        self.series_repository.save(series)
+
+        if self.series_linker is None:
+            return []
+        published = [t for t in series.published_topics() if t.slug]
+        updated: list[Path] = []
+        for sibling in published:
+            if sibling.slug == item.slug:
+                continue
+            entries = [(t.slug, t.title) for t in published if t.slug != sibling.slug]
+            path = self.series_linker.update(sibling.slug, entries)
+            if path is not None:
+                updated.append(path)
+        return updated
 
     # ------------------------------------------------------------------ #
     # Notifications

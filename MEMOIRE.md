@@ -307,6 +307,9 @@ make graph            # diagramme Mermaid du pipeline
 make scheduler        # démarre la planification toutes les 48 h
 blogseo runs          # historique des runs
 blogseo show <run_id> # détail d'un run
+blogseo series start "<thème>" --size 4   # planifie une série de 3 à 5 articles liés
+blogseo series list    # liste les séries planifiées
+blogseo series show <series_id>           # détail d'une série
 ```
 
 ---
@@ -325,16 +328,15 @@ blogseo show <run_id> # détail d'un run
 - [x] Génération de couverture Pollinations + image de secours Pillow
 - [x] Mode `--dry-run` et mode `--offline`
 - [x] Planificateur local 48 h + unité systemd
-- [x] 125 tests unitaires (Quality Gate, anti-doublon, SEO, fallback LLM, routage, Publisher)
-- [x] CLI complète (`run`, `check`, `index`, `graph`, `runs`, `show`)
+- [x] Suite de tests unitaires complète (Quality Gate, anti-doublon, SEO, fallback LLM, routage, Publisher, série)
+- [x] CLI complète (`run`, `check`, `index`, `graph`, `runs`, `show`, `dashboard`, `series`)
+- [x] Google Search Console branché sur `AnalyticsPort`
+- [x] Flux RSS de médias tech tunisiens dans `TUNISIA_RSS_FEEDS`
+- [x] Génération automatique d'un post LinkedIn/X à partir de l'article (Social Writer, agent 9)
+- [x] Tableau de bord HTML local des runs
+- [x] Mode « série » : plusieurs articles liés entre eux, maillage interne croisé (issue #41)
 
 ### À faire (backlog GitHub)
-
-- [ ] Brancher Google Search Console sur `AnalyticsPort` (l'interface est prête)
-- [ ] Ajouter des flux RSS de médias tech tunisiens dans `TUNISIA_RSS_FEEDS`
-- [ ] Génération automatique d'un post LinkedIn/X à partir de l'article
-- [ ] Tableau de bord HTML local des runs
-- [ ] Mode « série » : plusieurs articles liés entre eux
 
 Voir `docs/BACKLOG.md` et les issues du dépôt.
 

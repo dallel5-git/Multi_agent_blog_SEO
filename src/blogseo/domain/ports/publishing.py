@@ -49,6 +49,15 @@ class GitPublisherPort(ABC):
         """Vrai si le dépôt n'a aucune modification non commitée (hors nos fichiers)."""
 
 
+class SeriesBacklinkPort(ABC):
+    """Réécrit un article déjà publié pour y injecter la section « Cette série »."""
+
+    @abstractmethod
+    def update(self, slug: str, entries: list[tuple[str, str]]) -> Path | None:
+        """`entries` = [(slug, titre), ...] à lier. Renvoie le chemin modifié, ou None
+        si l'article est introuvable ou si le contenu n'a pas changé."""
+
+
 class ImageGeneratorPort(ABC):
     """Génère l'image de couverture (implémentation par défaut : Pollinations.ai)."""
 

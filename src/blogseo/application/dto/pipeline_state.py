@@ -46,6 +46,8 @@ class PipelineState:
     topic: Topic | None = None
     rejected_titles: list[str] = field(default_factory=list)
     topic_attempts: int = 0
+    series_id: str = ""
+    series_topic_index: int = -1
 
     # --- Agent 4 : Content Writer ------------------------------------- #
     article: Article | None = None

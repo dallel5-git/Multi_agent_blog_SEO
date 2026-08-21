@@ -151,6 +151,49 @@ Ces deux arêtes conditionnelles sont déclarées dans
 - garde-fou global : `MAX_NODE_VISITS = 40` dans l'exécuteur séquentiel,
   `recursion_limit = 40` côté LangGraph.
 
+### Mode série (issue #41)
+
+Une invocation normale du pipeline produit un article isolé. Le mode série
+permet de planifier 3 à 5 articles liés autour d'un même thème, publiés un par
+un au fil des runs normaux (`blogseo run`, y compris via le scheduler 48h),
+sans toucher à la topologie du graphe :
+
+```
+blogseo series start "<thème>" --size 4
+        │
+        ▼
+KeywordAnalystAgent.plan_series()  ── 1 appel LLM pour N sujets
+        │                              + anti-doublon (ArticleHistoryPort)
+        ▼
+storage/series/<id>.json  (ArticleSeries : N SeriesTopic, statut pending)
+        │
+        │  chaque `blogseo run` suivant :
+        ▼
+KeywordAnalystAgent.run()  ── consomme le 1er sujet "pending" de la série
+        │                      active (aucun appel LLM), anti-doublon revérifié
+        ▼
+   ... pipeline normal (content_writer → ... → publisher) ...
+        │
+        ▼
+PublisherAgent  ── à l'écriture dans le blog : statut → "written" (empêche
+        │           la file de reservir ce sujet, même en dry-run/REJECT)
+        │
+        │  seulement si push Git réel (décision ✅) :
+        ▼
+   statut → "published" + réouverture des .mdx des épisodes précédents pour
+   y injecter un lien vers ce nouvel article (section `## Cette série`,
+   idempotente, distincte du « À lire aussi » du SEO Editor)
+```
+
+Chaque `SeriesTopic` suit son propre statut (`pending → written → published`,
+ou `skipped` si un sujet planifié s'avère être un doublon au moment d'être
+consommé) — voir [`domain/entities/series.py`](../src/blogseo/domain/entities/series.py).
+Le maillage retour vit dans
+[`shared/series_linking.py`](../src/blogseo/shared/series_linking.py) (rendu
+pur, testable sans I/O) et son adaptateur
+[`infrastructure/publishing/series_linker.py`](../src/blogseo/infrastructure/publishing/series_linker.py)
+(port `SeriesBacklinkPort`).
+
 ---
 
 ## 4. Le Quality Gate en détail
@@ -233,6 +276,7 @@ décision. Le travail du pipeline n'est jamais perdu.
 storage/
 ├── drafts/          brouillons .mdx (écrits à chaque run, même en dry-run)
 ├── runs/            un JSON par run : statut, étapes, décision, chemins
+├── series/          un JSON par série d'articles liés (mode série, issue #41)
 ├── chroma/          base vectorielle SQLite (ou fallback_index.json)
 ├── covers/          images générées
 ├── logs/            pipeline.log, rotatif 2 Mo × 5
@@ -256,4 +300,9 @@ Aucune base de données à installer. Tout est lisible à l'œil nu pour le déb
 | Ajouter un 11ᵉ agent | Sous-classe de `Agent` + entrée dans `AgentBundle` + arête (le Social Writer, agent 9, en est l'exemple concret) |
 | Publier sur plusieurs blogs | Paramétrer `blog_content_dir` par profil de configuration |
 
-Dans tous les cas : **aucune modification des agents existants n'est requise.**
+Dans la plupart des cas, **aucune modification des agents existants n'est
+requise.** Exception notable : le mode série (issue #41) étend
+`KeywordAnalystAgent` et `PublisherAgent` eux-mêmes (nouveaux paramètres
+optionnels, rétrocompatibles) plutôt que d'ajouter un agent — la file
+d'attente et le maillage retour ne peuvent pas exister en dehors du cycle de
+vie de ces deux agents précis.

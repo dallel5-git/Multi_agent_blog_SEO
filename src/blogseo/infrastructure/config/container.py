@@ -41,9 +41,11 @@ from ..llm.groq import GroqLLM
 from ..llm.openrouter import OpenRouterLLM
 from ..notifications.telegram import NullNotifier, TelegramBot
 from ..persistence.json_run_repository import JsonRunRepository
+from ..persistence.json_series_repository import JsonSeriesRepository
 from ..persistence.mdx_article_source import MdxArticleSource
 from ..publishing.git_publisher import GitPublisher
 from ..publishing.mdx_writer import MdxArticleWriter
+from ..publishing.series_linker import SeriesBacklinkWriter
 from ..search.composite import CompositeSearch
 from ..search.duckduckgo import DuckDuckGoSearch
 from ..search.null_search import NullSearch
@@ -210,6 +212,14 @@ class Container:
         return JsonRunRepository(self.settings.storage.runs)
 
     @cached_property
+    def series_repository(self) -> JsonSeriesRepository:
+        return JsonSeriesRepository(self.settings.storage.series)
+
+    @cached_property
+    def series_linker(self) -> SeriesBacklinkWriter:
+        return SeriesBacklinkWriter(self.settings.publishing.blog_content_dir)
+
+    @cached_property
     def analytics(self) -> AnalyticsPort:
         """Search Console si configuré (et en ligne), sinon repli sur l'export manuel."""
         cfg = self.settings.search_console
@@ -281,6 +291,7 @@ class Container:
                 llm, self.history,
                 duplicate_threshold=s.content.duplicate_threshold,
                 temperature=s.llm.temperature_analytic,
+                series_repository=self.series_repository,
             ),
             content_writer=ContentWriterAgent(
                 llm,
@@ -320,6 +331,8 @@ class Container:
                 ),
                 commit_prefix=s.publishing.commit_prefix,
                 blog_url=s.content.blog_url,
+                series_repository=self.series_repository,
+                series_linker=self.series_linker,
             ),
             social_writer=SocialWriterAgent(
                 llm, self.telegram,

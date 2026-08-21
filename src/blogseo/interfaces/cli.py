@@ -10,6 +10,9 @@ Commandes disponibles :
     blogseo show <run_id>  Détaille un run
     blogseo dashboard      Génère un tableau de bord HTML local des runs
     blogseo graph          Affiche le diagramme Mermaid du pipeline
+    blogseo series start   Planifie une série de 3 à 5 articles liés
+    blogseo series list    Liste les séries planifiées
+    blogseo series show    Détaille une série
 """
 
 from __future__ import annotations
@@ -19,8 +22,9 @@ import sys
 import webbrowser
 from pathlib import Path
 
+from ..application.dto.pipeline_state import PipelineState
 from ..application.use_cases.generate_article import GenerateArticleUseCase
-from ..domain.entities.pipeline_run import RunStatus
+from ..domain.entities.pipeline_run import PipelineRun, RunStatus
 from ..infrastructure.config.container import Container
 from ..infrastructure.config.logging_config import setup_logging
 from ..infrastructure.config.settings import Settings
@@ -74,6 +78,21 @@ def build_parser() -> argparse.ArgumentParser:
                                help="Chemin du fichier HTML (défaut : storage/dashboard.html)")
     dashboard_cmd.add_argument("--open", dest="open_browser", action="store_true",
                                help="Ouvre la page dans le navigateur après génération")
+
+    series_cmd = sub.add_parser("series", help="Planifie et suit une série d'articles liés")
+    series_sub = series_cmd.add_subparsers(dest="series_action", required=True)
+
+    series_start = series_sub.add_parser("start", help="Planifie une nouvelle série (3 à 5 articles)")
+    series_start.add_argument("theme", help="Thème commun de la série")
+    series_start.add_argument("--size", type=int, default=4,
+                              help="Nombre d'articles de la série (3 à 5, défaut : 4)")
+    series_start.add_argument("--offline", action="store_true",
+                              help="Aucun appel réseau : LLM factice")
+
+    series_sub.add_parser("list", help="Liste les séries planifiées")
+
+    series_show = series_sub.add_parser("show", help="Détaille une série")
+    series_show.add_argument("series_id")
 
     return parser
 
@@ -223,6 +242,60 @@ def cmd_dashboard(container: Container, output: Path | None, open_browser: bool)
     return EXIT_OK
 
 
+_SERIES_STATUS_MARK = {"pending": "⏳", "written": "📝", "published": "✅", "skipped": "⏭ "}
+
+
+def cmd_series_start(container: Container, theme: str, size: int) -> int:
+    if not 3 <= size <= 5:
+        print("La taille d'une série doit être comprise entre 3 et 5 articles.")
+        return EXIT_ERROR
+
+    state = PipelineState(run=PipelineRun())
+    state.existing_articles = container.article_source.list_published()
+    series = container.agents.keyword_analyst.plan_series(state, theme=theme, size=size)
+
+    print(f"\n✅ {series.summary()}")
+    print(f"   ID : {series.series_id}\n")
+    for index, topic in enumerate(series.topics, start=1):
+        print(f"  {index}. {topic.title}  [{topic.category.value}]")
+    print(
+        "\nLe prochain `blogseo run` consommera automatiquement le premier sujet de "
+        "cette série.\n"
+    )
+    return EXIT_OK
+
+
+def cmd_series_list(container: Container) -> int:
+    all_series = container.series_repository.list_all()
+    if not all_series:
+        print("Aucune série planifiée. Utilisez `blogseo series start \"<thème>\"`.")
+        return EXIT_OK
+
+    print(f"\n{'ID':<20}{'STATUT':<12}SÉRIE")
+    print("─" * 90)
+    for series in all_series:
+        status = "active" if series.is_active else "terminée"
+        print(f"{series.series_id:<20}{status:<12}{series.summary()}")
+    print()
+    return EXIT_OK
+
+
+def cmd_series_show(container: Container, series_id: str) -> int:
+    series = container.series_repository.get(series_id)
+    if series is None:
+        print(f"Série {series_id} introuvable.")
+        return EXIT_ERROR
+
+    print(f"\nSérie {series.series_id} — {series.title}")
+    print(f"  Thème : {series.theme}\n")
+    for index, topic in enumerate(series.topics, start=1):
+        mark = _SERIES_STATUS_MARK.get(topic.status, "?")
+        slug_suffix = f"  → {topic.slug}" if topic.slug else ""
+        print(f"  {mark} {index}. {topic.title}  [{topic.status}]{slug_suffix}")
+    print()
+    return EXIT_OK
+
+
 def cmd_run(container: Container, args) -> int:
     use_case = GenerateArticleUseCase(
         container.orchestrator,
@@ -303,6 +376,13 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_show(container, args.run_id)
     if args.command == "dashboard":
         return cmd_dashboard(container, args.output, args.open_browser)
+    if args.command == "series":
+        if args.series_action == "start":
+            return cmd_series_start(container, args.theme, args.size)
+        if args.series_action == "list":
+            return cmd_series_list(container)
+        if args.series_action == "show":
+            return cmd_series_show(container, args.series_id)
     if args.command == "run":
         return cmd_run(container, args)
 

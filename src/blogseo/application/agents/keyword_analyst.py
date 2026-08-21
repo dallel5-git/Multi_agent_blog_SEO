@@ -10,14 +10,20 @@ C'est l'agent le plus décisif du pipeline. Il :
 
 from __future__ import annotations
 
+from ...domain.entities.series import ArticleSeries, SeriesTopic
 from ...domain.entities.topic import Keyword, Topic
 from ...domain.errors import DuplicateTopicError
 from ...domain.ports.llm import LLMPort
-from ...domain.ports.repositories import ArticleHistoryPort
+from ...domain.ports.repositories import ArticleHistoryPort, SeriesRepositoryPort
 from ...domain.value_objects.category import Category
 from ...shared.json_utils import extract_json
 from ..dto.pipeline_state import PipelineState
-from ..prompts.keyword_analyst import KEYWORD_ANALYST_SYSTEM, keyword_analyst_user_prompt
+from ..prompts.keyword_analyst import (
+    KEYWORD_ANALYST_SYSTEM,
+    SERIES_SYSTEM,
+    keyword_analyst_series_user_prompt,
+    keyword_analyst_user_prompt,
+)
 from .base import Agent
 
 
@@ -36,6 +42,7 @@ class KeywordAnalystAgent(Agent):
         duplicate_threshold: float = 0.85,
         max_attempts: int = 3,
         temperature: float = 0.4,
+        series_repository: SeriesRepositoryPort | None = None,
     ) -> None:
         super().__init__()
         self.llm = llm
@@ -43,9 +50,13 @@ class KeywordAnalystAgent(Agent):
         self.duplicate_threshold = duplicate_threshold
         self.max_attempts = max_attempts
         self.temperature = temperature
+        self.series_repository = series_repository
 
     # ------------------------------------------------------------------ #
     def run(self, state: PipelineState) -> PipelineState:
+        if self.series_repository is not None and self._consume_series_topic(state):
+            return state
+
         global_digest = self._format_global(state)
         tunisia_digest = self._format_tunisia(state)
         trends_block = self._format_trends(state)
@@ -89,6 +100,132 @@ class KeywordAnalystAgent(Agent):
 
         # Toutes les tentatives ont produit un doublon : on arrête proprement.
         raise last_error or DuplicateTopicError("(inconnu)", "(inconnu)", 1.0)
+
+    # ------------------------------------------------------------------ #
+    # Mode série (issue #41)
+    # ------------------------------------------------------------------ #
+    def _consume_series_topic(self, state: PipelineState) -> bool:
+        """Si une série active a un sujet en attente, l'utilise à la place du LLM.
+
+        Renvoie True si `state.topic` a été posé depuis la file d'attente
+        (aucun appel LLM), False s'il faut retomber sur la génération normale.
+        """
+        series = self.series_repository.find_active()
+        if series is None:
+            return False
+
+        index = next(
+            (i for i, t in enumerate(series.topics) if t.status == "pending"), None
+        )
+        if index is None:
+            return False
+        item = series.topics[index]
+
+        topic = self._topic_from_series(item)
+        hit = self._check_originality(topic)
+        if hit is not None:
+            # Le sujet planifié est devenu un doublon depuis la planification
+            # (un article proche a été publié entre-temps) : on l'abandonne
+            # sans bloquer le run, et on retombe sur la génération normale.
+            self.logger.warning(
+                "Sujet de série « %s » devenu un doublon (≈ %s) : abandonné", item.title, hit.slug
+            )
+            item.status = "skipped"
+            self.series_repository.save(series)
+            return False
+
+        state.topic = topic
+        state.run.topic_title = topic.title
+        state.series_id = series.series_id
+        state.series_topic_index = index
+        self.logger.info(
+            "Sujet de série retenu (%s, %s/%s) : « %s »",
+            series.series_id, index + 1, len(series.topics), topic.title,
+        )
+        return True
+
+    def plan_series(self, state: PipelineState, *, theme: str, size: int = 4) -> ArticleSeries:
+        """Planifie une série de `size` sujets liés (3 à 5), anti-doublon inclus.
+
+        Un seul appel LLM demande l'ensemble des sujets ; chacun est ensuite
+        vérifié individuellement contre l'historique (`ArticleHistoryPort`),
+        avec la même logique de retry à température croissante que `run()`
+        pour tout créneau qui s'avère être un doublon.
+        """
+        response = self.llm.generate(
+            SERIES_SYSTEM,
+            keyword_analyst_series_user_prompt(
+                theme=theme, size=size, existing_articles=state.existing_titles,
+            ),
+            temperature=self.temperature,
+            json_mode=True,
+        )
+        payload = extract_json(response.text, default={})
+        series_title = str(payload.get("series_title") or theme).strip()
+        raw_topics = list(payload.get("topics") or [])[:size]
+
+        topics: list[SeriesTopic] = []
+        rejected: list[str] = []
+        for slot in range(size):
+            raw = raw_topics[slot] if slot < len(raw_topics) else {}
+            topic = self._to_series_topic(raw)
+
+            for attempt in range(1, self.max_attempts + 1):
+                hit = self._check_originality(self._topic_from_series(topic))
+                if hit is None:
+                    break
+                self.logger.warning("Sujet de série rejeté (doublon) : %s (≈ %s)", topic.title, hit.slug)
+                rejected.append(f"{topic.title} (≈ {hit.slug})")
+                if attempt == self.max_attempts:
+                    self.logger.warning(
+                        "Créneau %s/%s : aucun sujet original trouvé après %s tentatives, conservé tel quel",
+                        slot + 1, size, self.max_attempts,
+                    )
+                    break
+                retry_response = self.llm.generate(
+                    SERIES_SYSTEM,
+                    keyword_analyst_series_user_prompt(
+                        theme=theme, size=1, existing_articles=state.existing_titles,
+                        rejected_titles=rejected,
+                    ),
+                    temperature=min(0.9, self.temperature + 0.2 * attempt),
+                    json_mode=True,
+                )
+                retry_payload = extract_json(retry_response.text, default={})
+                replacement = (list(retry_payload.get("topics") or [{}]) or [{}])[0]
+                topic = self._to_series_topic(replacement)
+
+            topics.append(topic)
+
+        series = ArticleSeries(theme=theme, title=series_title, topics=topics)
+        self.series_repository.save(series)
+        self.logger.info("Série planifiée : %s", series.summary())
+        return series
+
+    def _to_series_topic(self, raw: dict) -> SeriesTopic:
+        return SeriesTopic(
+            title=str(raw.get("title", "")).strip() or "(sujet à définir)",
+            angle=str(raw.get("angle", "")).strip(),
+            category=Category.coerce(raw.get("category")),
+            primary_keyword=str(raw.get("primary_keyword", "")).strip(),
+            secondary_keywords=tuple(str(k).strip() for k in (raw.get("secondary_keywords") or []) if str(k).strip()),
+            outline=tuple(str(h) for h in (raw.get("outline") or []) if h),
+            rationale=str(raw.get("rationale", "")).strip(),
+        )
+
+    def _topic_from_series(self, item: SeriesTopic) -> Topic:
+        return Topic(
+            title=item.title,
+            angle=item.angle,
+            category=item.category,
+            primary_keyword=Keyword(term=item.primary_keyword or item.title, intent="tutorial"),
+            secondary_keywords=tuple(
+                Keyword(term=term, intent="informational", priority=i)
+                for i, term in enumerate(item.secondary_keywords, start=2)
+            ),
+            rationale=item.rationale,
+            outline=item.outline,
+        )
 
     # ------------------------------------------------------------------ #
     def _check_originality(self, topic: Topic):

@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from ..entities.pipeline_run import PipelineRun
+from ..entities.series import ArticleSeries
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,3 +77,20 @@ class RunRepositoryPort(ABC):
 
     @abstractmethod
     def list_recent(self, limit: int = 20) -> list[PipelineRun]: ...
+
+
+class SeriesRepositoryPort(ABC):
+    """Persistance des séries d'articles (issue #41)."""
+
+    @abstractmethod
+    def save(self, series: ArticleSeries) -> None: ...
+
+    @abstractmethod
+    def get(self, series_id: str) -> ArticleSeries | None: ...
+
+    @abstractmethod
+    def find_active(self) -> ArticleSeries | None:
+        """La série la plus récente ayant encore un sujet en attente, s'il y en a une."""
+
+    @abstractmethod
+    def list_all(self) -> list[ArticleSeries]: ...

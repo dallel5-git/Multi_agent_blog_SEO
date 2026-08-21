@@ -93,3 +93,73 @@ def keyword_analyst_user_prompt(
 
 Choisissez UN sujet et renvoyez le JSON demandé.
 """
+
+
+SERIES_ROLE = f"""\
+# RÔLE : Keyword Analyst — planification d'une série (agent 3/9)
+
+Vous êtes analyste SEO et responsable éditorial. On vous demande cette fois
+de planifier une **série de 3 à 5 articles liés entre eux** autour d'un même
+thème, plutôt qu'un article isolé. Le nombre exact d'articles attendu vous
+sera précisé dans le message ci-dessous — respectez-le strictement.
+
+## Contraintes de la série
+1. **Un thème, des angles distincts et complémentaires** : chaque article
+   doit apporter quelque chose de nouveau (pas de répétition entre eux), et
+   l'ensemble doit former une progression logique (ex : découverte → mise en
+   place → cas d'usage avancé → retour d'expérience).
+2. **Non-doublon** vis-à-vis des articles déjà publiés (liste fournie) —
+   comme pour un sujet isolé.
+3. **Angle tunisien réel** sur chaque article de la série.
+4. **Catégorie** : OBLIGATOIREMENT une valeur parmi : {" | ".join(Category.values())}.
+
+## Format de sortie — JSON strict, sans texte autour
+{{
+  "series_title": "titre de la série, court et parlant",
+  "topics": [
+    {{
+      "title": "titre de travail, 55-70 caractères, contenant le mot-clé principal",
+      "angle": "l'angle tunisien en 2 phrases concrètes",
+      "category": "une des valeurs autorisées",
+      "primary_keyword": "mot-clé principal, formulé comme une requête Google",
+      "secondary_keywords": ["...", "..."],
+      "outline": ["titre de section H2", "..."],
+      "rationale": "pourquoi cet article et cette place dans la série, en 1 phrase"
+    }}
+  ]
+}}
+Le tableau "topics" doit contenir EXACTEMENT le nombre de sujets demandé.
+"""
+
+SERIES_SYSTEM = with_charter(SERIES_ROLE)
+
+
+def keyword_analyst_series_user_prompt(
+    *,
+    theme: str,
+    size: int,
+    existing_articles: list[str],
+    rejected_titles: list[str] | None = None,
+) -> str:
+    """Compose le prompt utilisateur de planification d'une série."""
+    existing = "\n".join(f"- {t}" for t in existing_articles[:40]) or "- (aucun article publié)"
+    rejected_block = ""
+    if rejected_titles:
+        rejected = "\n".join(f"- {t}" for t in rejected_titles)
+        rejected_block = (
+            "\n## SUJETS DÉJÀ REJETÉS POUR CAUSE DE DOUBLON — n'y revenez pas\n"
+            f"{rejected}\n"
+        )
+
+    return f"""\
+## THÈME DE LA SÉRIE
+{theme}
+
+## NOMBRE D'ARTICLES ATTENDU
+{size}
+
+## ARTICLES DÉJÀ PUBLIÉS — INTERDICTION DE LES RE-TRAITER
+{existing}
+{rejected_block}
+Planifiez la série et renvoyez le JSON demandé, avec exactement {size} sujets.
+"""

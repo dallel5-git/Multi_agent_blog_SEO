@@ -15,9 +15,15 @@ import pytest
 from blogseo.application.agents.keyword_analyst import KeywordAnalystAgent
 from blogseo.application.dto.pipeline_state import PipelineState
 from blogseo.domain.entities.pipeline_run import PipelineRun
+from blogseo.domain.entities.series import ArticleSeries, SeriesTopic
 from blogseo.domain.errors import DuplicateTopicError
 from blogseo.domain.ports.llm import LLMPort, LLMResponse
-from blogseo.domain.ports.repositories import ArticleHistoryPort, PublishedArticleRef, SimilarityHit
+from blogseo.domain.ports.repositories import (
+    ArticleHistoryPort,
+    PublishedArticleRef,
+    SeriesRepositoryPort,
+    SimilarityHit,
+)
 from blogseo.domain.value_objects.category import Category
 
 
@@ -148,3 +154,172 @@ class TestEchecApresTroisTentatives:
         assert error.title == "Sujet 3"
         assert error.similar_slug == "article-existant"
         assert error.score == pytest.approx(0.93)
+
+
+# --------------------------------------------------------------------------- #
+# Mode série (issue #41)
+# --------------------------------------------------------------------------- #
+
+class PayloadLLM(LLMPort):
+    """Renvoie une liste de payloads JSON complets, un par appel (batch ou retry)."""
+
+    name = "fake"
+
+    def __init__(self, payloads: list[dict]) -> None:
+        self._payloads = payloads
+        self.calls: list[float] = []
+
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        temperature: float = 0.7,
+        max_output_tokens: int = 4096,
+        json_mode: bool = False,
+    ) -> LLMResponse:
+        self.calls.append(temperature)
+        payload = self._payloads[len(self.calls) - 1]
+        return LLMResponse(text=json.dumps(payload), provider="fake", model="fake")
+
+
+class FakeSeriesRepository(SeriesRepositoryPort):
+    def __init__(self, active: ArticleSeries | None = None) -> None:
+        self._by_id = {active.series_id: active} if active else {}
+        self.saved: list[ArticleSeries] = []
+
+    def save(self, series: ArticleSeries) -> None:
+        self._by_id[series.series_id] = series
+        self.saved.append(series)
+
+    def get(self, series_id: str) -> ArticleSeries | None:
+        return self._by_id.get(series_id)
+
+    def find_active(self) -> ArticleSeries | None:
+        for series in self._by_id.values():
+            if series.is_active:
+                return series
+        return None
+
+    def list_all(self) -> list[ArticleSeries]:
+        return list(self._by_id.values())
+
+
+def series_topic_payload(title: str, category: str = "n8n") -> dict:
+    return {
+        "title": title,
+        "angle": "Angle tunisien concret.",
+        "category": category,
+        "primary_keyword": f"mot-clé {title}",
+        "secondary_keywords": ["secondaire"],
+        "outline": ["Introduction", "Mise en place", "Conclusion"],
+        "rationale": "Pertinent pour cet épisode de la série.",
+    }
+
+
+def series_batch_payload(titles: list[str]) -> dict:
+    return {
+        "series_title": "Automatiser sa PME avec n8n",
+        "topics": [series_topic_payload(t) for t in titles],
+    }
+
+
+def series_batch_payload_with_category(title: str, category: str) -> dict:
+    return {"series_title": "Automatiser sa PME avec n8n", "topics": [series_topic_payload(title, category)]}
+
+
+def make_pending_series(size: int = 1) -> ArticleSeries:
+    return ArticleSeries(
+        theme="n8n",
+        title="Automatiser sa PME avec n8n",
+        topics=[
+            SeriesTopic(
+                title=f"Épisode {i}", angle="angle", category=Category.N8N,
+                primary_keyword=f"mot-clé {i}",
+            )
+            for i in range(1, size + 1)
+        ],
+    )
+
+
+class TestPlanSeries:
+    def test_planifie_size_sujets_en_un_seul_appel_llm(self):
+        llm = PayloadLLM([series_batch_payload(["Découverte", "Mise en place", "Cas avancé"])])
+        history = FakeHistory([ORIGINAL_HIT, ORIGINAL_HIT, ORIGINAL_HIT])
+        repo = FakeSeriesRepository()
+        agent = KeywordAnalystAgent(llm, history, series_repository=repo)
+
+        series = agent.plan_series(make_state(), theme="n8n", size=3)
+
+        assert len(llm.calls) == 1
+        assert len(series.topics) == 3
+        assert [t.title for t in series.topics] == ["Découverte", "Mise en place", "Cas avancé"]
+        assert series.title == "Automatiser sa PME avec n8n"
+        assert repo.saved and repo.saved[-1].series_id == series.series_id
+
+    def test_categorie_libre_est_ramenee_a_l_union_fermee(self):
+        llm = PayloadLLM([series_batch_payload_with_category("Sujet", "Automatisation")])
+        history = FakeHistory([ORIGINAL_HIT])
+        repo = FakeSeriesRepository()
+        agent = KeywordAnalystAgent(llm, history, series_repository=repo)
+
+        series = agent.plan_series(make_state(), theme="n8n", size=1)
+
+        assert series.topics[0].category == Category.N8N
+
+    def test_doublon_sur_un_creneau_redemande_un_remplacant(self):
+        llm = PayloadLLM([
+            series_batch_payload(["Sujet doublon", "Sujet original"]),
+            series_batch_payload(["Sujet remplaçant"]),  # réponse du retry pour le créneau 1
+        ])
+        history = FakeHistory([DUPLICATE_HIT, ORIGINAL_HIT, ORIGINAL_HIT])
+        repo = FakeSeriesRepository()
+        agent = KeywordAnalystAgent(llm, history, series_repository=repo, max_attempts=3)
+
+        series = agent.plan_series(make_state(), theme="n8n", size=2)
+
+        assert len(llm.calls) == 2
+        assert series.topics[0].title == "Sujet remplaçant"
+        assert series.topics[1].title == "Sujet original"
+
+
+class TestRunConsommeLaFileDAttente:
+    def test_sujet_en_attente_utilise_sans_appel_llm(self):
+        llm = PayloadLLM([topic_payload("ne devrait jamais être appelé")])
+        history = FakeHistory([ORIGINAL_HIT])
+        series = make_pending_series(size=2)
+        repo = FakeSeriesRepository(series)
+        agent = KeywordAnalystAgent(llm, history, series_repository=repo)
+
+        state = agent.run(make_state())
+
+        assert llm.calls == []
+        assert state.topic.title == "Épisode 1"
+        assert state.series_id == series.series_id
+        assert state.series_topic_index == 0
+
+    def test_sujet_devenu_doublon_retombe_sur_la_generation_normale(self):
+        llm = PayloadLLM([topic_payload("Sujet frais généré normalement")])
+        history = FakeHistory([DUPLICATE_HIT, ORIGINAL_HIT])
+        series = make_pending_series(size=1)
+        repo = FakeSeriesRepository(series)
+        agent = KeywordAnalystAgent(llm, history, series_repository=repo)
+
+        state = agent.run(make_state())
+
+        assert len(llm.calls) == 1
+        assert state.topic.title == "Sujet frais généré normalement"
+        assert state.series_id == ""
+        assert series.topics[0].status == "skipped"
+
+    def test_sans_serie_active_generation_normale_inchangee(self):
+        llm = PayloadLLM([topic_payload("Sujet isolé")])
+        history = FakeHistory([ORIGINAL_HIT])
+        repo = FakeSeriesRepository(active=None)
+        agent = KeywordAnalystAgent(llm, history, series_repository=repo)
+
+        state = agent.run(make_state())
+
+        assert len(llm.calls) == 1
+        assert state.topic.title == "Sujet isolé"
+        assert state.series_id == ""
