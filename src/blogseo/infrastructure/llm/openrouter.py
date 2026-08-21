@@ -24,19 +24,29 @@ _ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 
 
 class OpenRouterLLM(LLMPort):
-    """Implémentation `LLMPort` pour OpenRouter (modèles gratuits `:free`)."""
+    """Implémentation `LLMPort` pour OpenRouter (modèles gratuits `:free`).
+
+    `name` est réglable par instance (et non figé sur la classe) : la chaîne
+    peut ainsi enchaîner deux modèles OpenRouter différents sous la même clé
+    (ex. "openrouter", "openrouter-2") sans que `FallbackLLM` les confonde —
+    son suivi de quota épuisé (`_exhausted`) et ses statistiques d'usage sont
+    indexés par `name`.
+    """
 
     name = "openrouter"
 
     def __init__(
         self,
         api_key: str,
-        model: str = "meta-llama/llama-3.3-70b-instruct:free",
+        model: str = "nvidia/nemotron-3-super-120b-a12b:free",
         *,
+        name: str | None = None,
         rate_limiter: RateLimiter | None = None,
         timeout_s: int = 120,
         session: requests.Session | None = None,
     ) -> None:
+        if name:
+            self.name = name
         self.api_key = api_key
         self.model = model
         self.timeout_s = timeout_s

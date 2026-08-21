@@ -19,8 +19,8 @@ de dépendance stricte : **les dépendances ne pointent que vers l'intérieur**.
 │  domain/                entités, value objects, PORTS, erreurs      │
 │  ↑ ne dépend de RIEN (ni framework, ni requests, ni chemin disque)  │
 ├─────────────────────────────────────────────────────────────────────┤
-│  infrastructure/        adapters : Groq, OpenRouter, Cerebras,      │
-│                         Gemini, DuckDuckGo,                         │
+│  infrastructure/        adapters : Groq, OpenRouter, Gemini,        │
+│                         DuckDuckGo,                                 │
 │                         Chroma, Telegram, Git, Pollinations…        │
 │  ↑ implémente les ports du domain                                   │
 └─────────────────────────────────────────────────────────────────────┘
@@ -232,7 +232,7 @@ storage/
 ├── chroma/          base vectorielle SQLite (ou fallback_index.json)
 ├── covers/          images générées
 ├── logs/            pipeline.log, rotatif 2 Mo × 5
-├── rate_limits/     quotas journaliers persistés (groq.json, openrouter.json, cerebras.json, gemini.json)
+├── rate_limits/     quotas journaliers persistés (groq.json, openrouter.json, openrouter-2.json, gemini.json)
 ├── analytics/       performance.json (export Search Console manuel, optionnel)
 └── telegram_offset.json   offset getUpdates, évite de rejouer un vieux callback
 ```

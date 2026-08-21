@@ -84,13 +84,19 @@ def _env_list(key: str, default: str = "") -> tuple[str, ...]:
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True, slots=True)
 class LLMSettings:
-    """Chaîne à 4 fournisseurs LLM, tous 100 % free tier, dans cet ordre :
+    """Chaîne LLM 100 % free tier, dans cet ordre (voir ADR 0008) :
 
-    Groq → OpenRouter → Cerebras → Gemini (voir ADR 0007). L'ordre reflète la
-    fiabilité observée lors des tests, pas une hiérarchie de qualité : chaque
-    fournisseur gratuit peut ponctuellement être en panne, en quota, ou (pour
-    Cerebras/Gemini au moment de l'écriture) bloqué côté compte — la chaîne
-    encaisse ces pannes individuelles sans jamais bloquer un run.
+    Groq → OpenRouter (2 modèles) → Gemini. Cerebras a été retiré : le compte
+    testé exige une facturation activée pour l'inférence (HTTP 402), ce qui
+    viole la contrainte « jamais de carte bancaire » du projet (ADR 0003) —
+    ce n'est pas une panne ponctuelle de compte comme pour Gemini (ADR 0006),
+    mais une caractéristique du produit. L'adapter `CerebrasLLM` reste dans
+    le code pour qui a un compte sans cette restriction.
+
+    OpenRouter occupe deux maillons (`openrouter_model`/`openrouter_model_2`)
+    sous la même clé : plusieurs modèles `:free` différents plutôt qu'un
+    seul, pour absorber le cas où l'un d'eux devient payant ou est
+    rate-limité (déjà observé lors des tests).
     """
 
     groq_api_key: str = ""
@@ -101,14 +107,15 @@ class LLMSettings:
     groq_rpd: int = 14_400
 
     openrouter_api_key: str = ""
-    openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
+    # meta-llama/llama-3.3-70b-instruct:free est devenu payant (HTTP 404 avec
+    # message de migration) ; nemotron-3-super-120b répond correctement en
+    # texte simple ET en JSON strict (vérifié).
+    openrouter_model: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    # Second modèle, même clé : gpt-oss-20b:free fonctionne en texte simple
+    # mais peut être rate-limité indépendamment du premier modèle.
+    openrouter_model_2: str = "openai/gpt-oss-20b:free"
     openrouter_rpm: int = 20
     openrouter_rpd: int = 200  # OpenRouter free tier : ~50-1000/jour selon les crédits du compte
-
-    cerebras_api_key: str = ""
-    cerebras_model: str = "gpt-oss-120b"
-    cerebras_rpm: int = 30
-    cerebras_rpd: int = 14_400
 
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.6-flash"
@@ -122,10 +129,7 @@ class LLMSettings:
 
     @property
     def has_any_provider(self) -> bool:
-        return bool(
-            self.groq_api_key or self.openrouter_api_key
-            or self.cerebras_api_key or self.gemini_api_key
-        )
+        return bool(self.groq_api_key or self.openrouter_api_key or self.gemini_api_key)
 
 
 @dataclass(frozen=True, slots=True)
@@ -320,13 +324,10 @@ class Settings:
                 groq_rpm=_env_int("GROQ_RPM", 30),
                 groq_rpd=_env_int("GROQ_RPD", 14_400),
                 openrouter_api_key=_env("OPENROUTER_API_KEY"),
-                openrouter_model=_env("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),
+                openrouter_model=_env("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free"),
+                openrouter_model_2=_env("OPENROUTER_MODEL_2", "openai/gpt-oss-20b:free"),
                 openrouter_rpm=_env_int("OPENROUTER_RPM", 20),
                 openrouter_rpd=_env_int("OPENROUTER_RPD", 200),
-                cerebras_api_key=_env("CEREBRAS_API_KEY"),
-                cerebras_model=_env("CEREBRAS_MODEL", "gpt-oss-120b"),
-                cerebras_rpm=_env_int("CEREBRAS_RPM", 30),
-                cerebras_rpd=_env_int("CEREBRAS_RPD", 14_400),
                 gemini_api_key=_env("GEMINI_API_KEY"),
                 gemini_model=_env("GEMINI_MODEL", "gemini-3.6-flash"),
                 gemini_rpm=_env_int("GEMINI_RPM", 15),
@@ -394,7 +395,7 @@ class Settings:
         return "\n".join([
             f"  LLM (ordre)     : 1. Groq ({self.llm.groq_model}) — clé {flag(self.llm.groq_api_key)}",
             f"                    2. OpenRouter ({self.llm.openrouter_model}) — clé {flag(self.llm.openrouter_api_key)}",
-            f"                    3. Cerebras ({self.llm.cerebras_model}) — clé {flag(self.llm.cerebras_api_key)}",
+            f"                    3. OpenRouter ({self.llm.openrouter_model_2}) — clé {flag(self.llm.openrouter_api_key)}",
             f"                    4. Gemini ({self.llm.gemini_model}) — clé {flag(self.llm.gemini_api_key)}",
             f"  Recherche       : DuckDuckGo (sans clé) + Tavily {flag(self.search.tavily_api_key)}",
             f"  Telegram        : {'✅ configuré' if self.telegram.is_configured else '❌ non configuré'}",

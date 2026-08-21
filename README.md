@@ -107,21 +107,23 @@ GROQ_API_KEY=gsk_...
 GROQ_MODEL=openai/gpt-oss-20b
 ```
 
-### 3.2 OpenRouter, Cerebras, Gemini — fournisseurs de secours (optionnels)
+### 3.2 OpenRouter, Gemini — fournisseurs de secours (optionnels)
 
 Si le fournisseur précédent atteint son quota ou tombe en panne (HTTP 429 ou
 5xx), le pipeline bascule automatiquement au suivant dans l'ordre Groq →
-OpenRouter → Cerebras → Gemini. Renseignez-en autant que vous voulez :
+OpenRouter (2 modèles) → Gemini. Renseignez-en autant que vous voulez :
 
 ```env
-OPENROUTER_API_KEY=...    # https://openrouter.ai/keys
-CEREBRAS_API_KEY=...      # https://cloud.cerebras.ai (Platform → API Keys)
+OPENROUTER_API_KEY=...    # https://openrouter.ai/keys — deux modèles gratuits sous une clé
 GEMINI_API_KEY=...        # https://aistudio.google.com/apikey
 ```
 
 Voir `.env.example` pour le détail de chaque fournisseur (modèle par défaut,
-quotas, particularités observées — ex. certains comptes Cerebras exigent une
-facturation activée même en free tier).
+quotas). Cerebras a été essayé puis retiré de la chaîne par défaut : le
+compte testé exigeait une facturation activée même en free tier — voir
+[ADR 0008](docs/adr/0008-cerebras-retire-openrouter-double.md). Son adapter
+reste dans le code (`infrastructure/llm/cerebras.py`) pour qui a un compte
+sans cette restriction.
 
 ### 3.3 Telegram — votre télécommande de publication (recommandé)
 
@@ -309,7 +311,7 @@ src/blogseo/
 │   └── use_cases/           GenerateArticleUseCase
 │
 ├── infrastructure/          ← implémente les ports
-│   ├── llm/                 groq.py, openrouter.py, cerebras.py, gemini.py, fallback_chain.py, fake.py
+│   ├── llm/                 groq.py, openrouter.py, gemini.py, cerebras.py (non câblé), fallback_chain.py, fake.py
 │   ├── search/              duckduckgo.py, tavily.py, composite.py
 │   ├── sources/             hackernews.py, reddit.py, devto.py, rss.py
 │   ├── trends/              pytrends_adapter.py
@@ -351,7 +353,6 @@ Aucun autre fichier à toucher.
 |---|---|---|
 | Groq | ~30 req/min | ❌ non |
 | OpenRouter (`:free`) | limité mais suffisant en secours | ❌ non |
-| Cerebras | free tier (facturation parfois requise selon le compte) | ❌ non |
 | Google Gemini | ~15 req/min, ~1500/jour | ❌ non |
 | DuckDuckGo (`ddgs`) | illimité en pratique | ❌ aucune inscription |
 | Google Trends (`pytrends`) | gratuit | ❌ aucune inscription |
@@ -401,7 +402,7 @@ juste moins fin. `pip install chromadb` pour le mode complet.
 `DUPLICATE_THRESHOLD` (0.90 par exemple) ou élargissez les sources de veille.
 
 **Quota d'un fournisseur LLM épuisé**
-→ La bascule vers le suivant de la chaîne (Groq → OpenRouter → Cerebras →
+→ La bascule vers le suivant de la chaîne (Groq → OpenRouter → OpenRouter →
 Gemini) est automatique. Vérifiez dans les logs :
 `[chaîne LLM] <fournisseur> a atteint son quota → bascule`.
 

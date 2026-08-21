@@ -36,7 +36,7 @@ non négociable et prime sur toute considération de performance ou d'élégance
 
 | Besoin | Service retenu | Clé requise | Quota gratuit |
 |---|---|---|---|
-| LLM (chaîne à 4) | **Groq → OpenRouter → Cerebras → Gemini** — [ADR 0007](docs/adr/0007-chaine-llm-a-quatre-fournisseurs.md) | au moins 1 clé | voir docs fournisseur |
+| LLM (chaîne) | **Groq → OpenRouter (×2) → Gemini** — [ADR 0008](docs/adr/0008-cerebras-retire-openrouter-double.md) | au moins 1 clé | voir docs fournisseur |
 | Recherche web | **DuckDuckGo** (`ddgs`) | **aucune** | non déclaré |
 | Recherche (repli) | **Tavily** | optionnelle | 1000 req/mois |
 | Tendances | **pytrends** (Google Trends) | **aucune** | non déclaré |
@@ -164,7 +164,7 @@ application/      agents, cas d'usage, prompts ← dépend UNIQUEMENT des ports
       ↓
 domain/           entités, value objects, PORTS ← ne dépend de RIEN
       ↑
-infrastructure/   adapters (Cerebras, Groq, DDG, Chroma, Telegram, Git…)
+infrastructure/   adapters (Groq, OpenRouter, Gemini, DDG, Chroma, Telegram, Git…)
 ```
 
 **Règle de dépendance : les flèches ne pointent que vers l'intérieur.**
@@ -344,6 +344,6 @@ Voir `docs/BACKLOG.md` et les issues du dépôt.
 - Chaîne YouTube : https://www.youtube.com/@oussamadallel5
 - LinkedIn : https://www.linkedin.com/in/oussama-dallel-120143209/
 - GitHub : https://github.com/dallel5-git
-- Clé Cerebras gratuite : https://cloud.cerebras.ai
 - Clé Groq gratuite : https://console.groq.com/keys
+- Clé OpenRouter gratuite : https://openrouter.ai/keys
 - Créer un bot Telegram : parler à `@BotFather` sur Telegram

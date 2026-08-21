@@ -3,6 +3,7 @@
 - **Statut :** accepté
 - **Date :** 2026-08-21
 - **Complète :** ADR 0006 (Cerebras remplace Gemini)
+- **Supersédée partiellement par :** [ADR 0008](0008-cerebras-retire-openrouter-double.md) — Cerebras retiré (facturation exigée, contraire à l'ADR 0003), OpenRouter doublé à la place
 
 ## Contexte
 
