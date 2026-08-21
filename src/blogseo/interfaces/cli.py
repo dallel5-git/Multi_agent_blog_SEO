@@ -82,6 +82,11 @@ def cmd_check(container: Container) -> int:
         notes.append("Aucune clé LLM : le pipeline tournera avec le LLM factice (articles d'exemple).")
     if not settings.telegram.is_configured and settings.human_review:
         notes.append("Telegram non configuré : sans validation, les articles resteront en local.")
+    if not settings.search_console.is_configured:
+        notes.append(
+            "Search Console non configuré : le Keyword Analyst travaillera sans retour de "
+            "performance (voir scripts/search_console_oauth.py)."
+        )
 
     content_dir = settings.publishing.blog_content_dir
     if not content_dir.exists():

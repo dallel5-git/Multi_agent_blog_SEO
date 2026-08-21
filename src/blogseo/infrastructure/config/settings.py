@@ -195,6 +195,24 @@ class TelegramSettings:
 
 
 @dataclass(frozen=True, slots=True)
+class SearchConsoleSettings:
+    """Boucle de rétroaction performance — OAuth Search Console (gratuit).
+
+    Voir `scripts/search_console_oauth.py` pour obtenir `refresh_token`, et la
+    section 10 de `.env.example` pour la création des identifiants OAuth.
+    """
+
+    site_url: str = ""       # ex. "https://oussama-ai-blog-v1.vercel.app/" ou "sc-domain:exemple.com"
+    client_id: str = ""
+    client_secret: str = ""
+    refresh_token: str = ""
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(self.site_url and self.client_id and self.client_secret and self.refresh_token)
+
+
+@dataclass(frozen=True, slots=True)
 class StorageSettings:
     """Chemins locaux du projet (jamais dans le dépôt du blog)."""
 
@@ -244,6 +262,7 @@ class Settings:
     content: ContentSettings = field(default_factory=ContentSettings)
     publishing: PublishingSettings = field(default_factory=PublishingSettings)
     telegram: TelegramSettings = field(default_factory=TelegramSettings)
+    search_console: SearchConsoleSettings = field(default_factory=SearchConsoleSettings)
     storage: StorageSettings = field(default_factory=StorageSettings)
 
     human_review: bool = True
@@ -313,6 +332,12 @@ class Settings:
                 poll_interval_s=_env_int("TELEGRAM_POLL_INTERVAL_S", 5),
                 default_on_timeout=_env("TELEGRAM_DEFAULT_ON_TIMEOUT", "reject"),
             ),
+            search_console=SearchConsoleSettings(
+                site_url=_env("SEARCH_CONSOLE_SITE_URL"),
+                client_id=_env("SEARCH_CONSOLE_CLIENT_ID"),
+                client_secret=_env("SEARCH_CONSOLE_CLIENT_SECRET"),
+                refresh_token=_env("SEARCH_CONSOLE_REFRESH_TOKEN"),
+            ),
             storage=StorageSettings(root=Path(_env("STORAGE_DIR", str(PROJECT_ROOT / "storage")))),
             human_review=_env_bool("HUMAN_REVIEW", True),
             dry_run=_env_bool("DRY_RUN", False),
@@ -331,6 +356,7 @@ class Settings:
             f"  LLM de secours  : Groq ({self.llm.groq_model}) — clé {flag(self.llm.groq_api_key)}",
             f"  Recherche       : DuckDuckGo (sans clé) + Tavily {flag(self.search.tavily_api_key)}",
             f"  Telegram        : {'✅ configuré' if self.telegram.is_configured else '❌ non configuré'}",
+            f"  Search Console  : {'✅ configuré' if self.search_console.is_configured else '❌ non configuré (repli : export manuel)'}",
             f"  Validation      : HUMAN_REVIEW={self.human_review}",
             f"  Orchestrateur   : {self.orchestrator}",
             f"  Dossier blog    : {self.publishing.blog_content_dir}",

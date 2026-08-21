@@ -23,11 +23,13 @@ from ...application.agents.trend_scout import TrendScoutAgent
 from ...application.agents.tunisia_watcher import TunisiaWatcherAgent
 from ...domain.entities.pipeline_run import Decision
 from ...domain.entities.trend import TrendOrigin
+from ...domain.ports.analytics import AnalyticsPort
 from ...domain.ports.llm import LLMPort
 from ...domain.ports.search import SearchPort, TrendsPort
 from ...orchestrator.graph import build_orchestrator
 from ...orchestrator.pipeline_spec import AgentBundle
 from ...shared.rate_limiter import RateLimitConfig, RateLimiter
+from ..analytics.search_console import SearchConsoleAnalytics
 from ..analytics.stub import FileAnalyticsStub
 from ..embeddings.sentence_transformers_adapter import SentenceTransformerEmbeddings
 from ..images.pollinations import PollinationsImageGenerator
@@ -178,7 +180,16 @@ class Container:
         return JsonRunRepository(self.settings.storage.runs)
 
     @cached_property
-    def analytics(self) -> FileAnalyticsStub:
+    def analytics(self) -> AnalyticsPort:
+        """Search Console si configuré (et en ligne), sinon repli sur l'export manuel."""
+        cfg = self.settings.search_console
+        if not self.offline and cfg.is_configured:
+            return SearchConsoleAnalytics(
+                site_url=cfg.site_url,
+                client_id=cfg.client_id,
+                client_secret=cfg.client_secret,
+                refresh_token=cfg.refresh_token,
+            )
         return FileAnalyticsStub(self.settings.storage.root / "analytics" / "performance.json")
 
     # ------------------------------------------------------------------ #
