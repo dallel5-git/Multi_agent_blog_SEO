@@ -63,5 +63,10 @@
     "name": "backlog",
     "color": "ededed",
     "description": "Non planifie"
+  },
+  {
+    "name": "v2.0",
+    "color": "0e4c92",
+    "description": "Prevu en v2.0 - diffusion"
   }
 ]

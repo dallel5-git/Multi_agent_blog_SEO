@@ -55,6 +55,10 @@ echo "╰───────────────────────�
 echo
 
 # --- 1. Labels --------------------------------------------------------------
+# GitHub impose une limite secondaire (« secondary rate limit ») quand on
+# enchaîne trop d'écritures d'affilée : au-delà d'un certain rythme, l'API
+# se met à répondre 403 pendant ~60s. On espace donc les appels, on détecte
+# ce cas précis pour attendre plus longtemps, et on retente sinon.
 echo "▶ Labels"
 python3 -c "
 import json,sys
@@ -63,19 +67,45 @@ for l in json.load(open('$DATA_DIR/labels.json',encoding='utf-8')):
 " | while IFS=$'\t' read -r name color description; do
   if $DRY_RUN; then
     echo "  · [simulation] label « $name »"
-  elif gh label create "$name" --repo "$REPO" --color "$color" --description "$description" >/dev/null 2>&1; then
-    echo "  ✔ créé   : $name"
-  else
-    gh label edit "$name" --repo "$REPO" --color "$color" --description "$description" >/dev/null 2>&1 \
-      && echo "  ↻ à jour : $name" \
-      || echo "  ⚠ ignoré : $name"
+    continue
   fi
+  ok=false
+  for attempt in 1 2 3; do
+    if err="$(gh label create "$name" --repo "$REPO" --color "$color" --description "$description" 2>&1)"; then
+      echo "  ✔ créé   : $name"; ok=true; break
+    fi
+    if err="$(gh label edit "$name" --repo "$REPO" --color "$color" --description "$description" 2>&1)"; then
+      echo "  ↻ à jour : $name"; ok=true; break
+    fi
+    if grep -qi "rate limit" <<< "$err"; then
+      echo "  ⏳ limite API atteinte, pause de 30s…"
+      sleep 30
+    else
+      sleep 3
+    fi
+  done
+  # Un label manquant n'empêche pas la création des issues : on signale et on continue.
+  $ok || echo "  ⚠ échec  : $name — $(head -1 <<< "$err")"
+  sleep 1
 done
 echo
 
 # --- 2. Milestones ----------------------------------------------------------
 echo "▶ Milestones"
-existing_ms="$($DRY_RUN && echo "" || gh api "repos/$REPO/milestones?state=all" --jq '.[].title' 2>/dev/null || echo "")"
+existing_ms=""
+if ! $DRY_RUN; then
+  # La lecture peut elle aussi être bloquée par la limite secondaire juste
+  # après la rafale de labels : on la retente avant de conclure qu'il n'y a
+  # rien d'existant (sinon on tenterait de recréer des milestones déjà là).
+  for attempt in 1 2 3; do
+    if existing_ms="$(gh api "repos/$REPO/milestones?state=all" --jq '.[].title' 2>&1)"; then
+      break
+    fi
+    echo "  … lecture des milestones existants, nouvel essai dans $((attempt * 10))s"
+    sleep $((attempt * 10))
+    existing_ms=""
+  done
+fi
 python3 -c "
 import json
 for m in json.load(open('$DATA_DIR/milestones.json',encoding='utf-8')):
@@ -83,13 +113,29 @@ for m in json.load(open('$DATA_DIR/milestones.json',encoding='utf-8')):
 " | while IFS=$'\t' read -r title description; do
   if $DRY_RUN; then
     echo "  · [simulation] milestone « $title »"
-  elif grep -Fxq "$title" <<< "$existing_ms"; then
-    echo "  ↻ existe : $title"
-  else
-    gh api "repos/$REPO/milestones" -f title="$title" -f description="$description" >/dev/null 2>&1 \
-      && echo "  ✔ créé   : $title" \
-      || echo "  ⚠ échec  : $title"
+    continue
   fi
+  if grep -Fxq "$title" <<< "$existing_ms"; then
+    echo "  ↻ existe : $title"
+    continue
+  fi
+  ok=false
+  for attempt in 1 2 3; do
+    if err="$(gh api "repos/$REPO/milestones" -f title="$title" -f description="$description" 2>&1)"; then
+      echo "  ✔ créé   : $title"; ok=true; break
+    fi
+    if grep -qi "already_exists\|already exists" <<< "$err"; then
+      echo "  ↻ existe : $title"; ok=true; break
+    fi
+    if grep -qi "rate limit" <<< "$err"; then
+      echo "  ⏳ limite API atteinte, pause de 30s…"
+      sleep 30
+    else
+      sleep 3
+    fi
+  done
+  $ok || echo "  ⚠ échec  : $title — $(head -1 <<< "$err")"
+  sleep 1
 done
 echo
 
@@ -122,7 +168,7 @@ for i, issue in enumerate(data):
 (tmp / "index.tsv").write_text("\n".join(index), encoding="utf-8")
 PYEOF
 
-created=0; skipped=0; closed=0
+created=0; skipped=0; closed=0; failed=0; streak=0
 while IFS=$'\t' read -r title labels milestone body_file state; do
   [[ -z "$title" ]] && continue
 
@@ -138,14 +184,47 @@ while IFS=$'\t' read -r title labels milestone body_file state; do
     continue
   fi
 
-  url="$(gh issue create --repo "$REPO" \
-        --title "$title" \
-        --body-file "$body_file" \
-        --label "$labels" \
-        --milestone "$milestone" 2>/dev/null)" || {
-    # Repli sans milestone si celui-ci n'existe pas encore côté API.
-    url="$(gh issue create --repo "$REPO" --title "$title" --body-file "$body_file" --label "$labels")"
-  }
+  # Trois tentatives avec délai croissant : une coupure réseau passagère ou une
+  # limite secondaire de l'API ne doit pas interrompre tout le backlog.
+  url=""; err=""
+  for attempt in 1 2 3; do
+    if url="$(gh issue create --repo "$REPO" --title "$title" --body-file "$body_file" \
+              --label "$labels" --milestone "$milestone" 2>&1)"; then
+      break
+    fi
+    err="$url"; url=""
+    # Repli sans milestone au cas où celui-ci n'existerait pas encore.
+    if url="$(gh issue create --repo "$REPO" --title "$title" --body-file "$body_file" \
+              --label "$labels" 2>&1)"; then
+      break
+    fi
+    err="$url"; url=""
+    if grep -qi "rate limit" <<< "$err"; then
+      echo "  ⏳ limite API atteinte, pause de 30s…"
+      sleep 30
+    else
+      echo "  … tentative $attempt/3 échouée, nouvel essai dans $((attempt * 5))s"
+      sleep $((attempt * 5))
+    fi
+  done
+
+  if [[ -z "$url" ]]; then
+    echo "  ✖ échec  : $title — $(head -1 <<< "$err")"
+    failed=$((failed+1))
+    streak=$((streak+1))
+    # Disjoncteur : trois échecs d'affilée = GitHub est injoignable. Inutile
+    # d'insister sur les 40 issues suivantes, on rend la main tout de suite.
+    if [[ $streak -ge 3 ]]; then
+      echo
+      echo "  ⛔ Trois échecs consécutifs : GitHub semble injoignable."
+      echo "     Vérifiez votre connexion et https://githubstatus.com,"
+      echo "     puis relancez le script — il reprendra où il s'est arrêté."
+      break
+    fi
+    continue   # sinon on passe à la suivante au lieu d'arrêter tout le script
+  fi
+
+  streak=0
   echo "  ✔ créée  : $title"
   created=$((created+1))
 
@@ -155,11 +234,14 @@ while IFS=$'\t' read -r title labels milestone body_file state; do
     gh issue close "$url" --repo "$REPO" --reason completed --comment "Livré en v1.0.0." >/dev/null 2>&1 \
       && closed=$((closed+1))
   fi
-  sleep 0.7   # courtoisie envers l'API GitHub
+  sleep 1.5   # courtoisie envers l'API GitHub, pour éviter la limite secondaire
 done < "$TMP/index.tsv"
 
 echo
 echo "╭──────────────────────────────────────────────────────────────╮"
 echo "│  Terminé : $created créée(s), $skipped déjà présente(s), $closed fermée(s)"
+if [[ $failed -gt 0 ]]; then
+  echo "│  ⚠ $failed en échec — relancez le script, il reprendra où il s'est arrêté"
+fi
 echo "│  → https://github.com/$REPO/issues"
 echo "╰──────────────────────────────────────────────────────────────╯"
