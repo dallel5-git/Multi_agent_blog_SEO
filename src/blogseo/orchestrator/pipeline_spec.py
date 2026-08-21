@@ -18,6 +18,7 @@ from ..application.agents.keyword_analyst import KeywordAnalystAgent
 from ..application.agents.publisher import PublisherAgent
 from ..application.agents.quality_gate import QualityGateAgent
 from ..application.agents.seo_editor import SeoEditorAgent
+from ..application.agents.social_writer import SocialWriterAgent
 from ..application.agents.technical_reviewer import TechnicalReviewerAgent
 from ..application.agents.trend_scout import TrendScoutAgent
 from ..application.agents.tunisia_watcher import TunisiaWatcherAgent
@@ -30,7 +31,7 @@ END = "__end__"
 
 @dataclass(slots=True)
 class AgentBundle:
-    """Les 9 agents du pipeline, dans l'ordre d'exécution."""
+    """Les 10 agents du pipeline, dans l'ordre d'exécution."""
 
     trend_scout: TrendScoutAgent
     tunisia_watcher: TunisiaWatcherAgent
@@ -40,6 +41,7 @@ class AgentBundle:
     seo_editor: SeoEditorAgent
     quality_gate: QualityGateAgent
     publisher: PublisherAgent
+    social_writer: SocialWriterAgent
     analytics_tracker: AnalyticsTrackerAgent
 
     def ordered(self) -> list[Agent]:
@@ -53,6 +55,7 @@ class AgentBundle:
             self.seo_editor,
             self.quality_gate,
             self.publisher,
+            self.social_writer,
             self.analytics_tracker,
         ]
 
@@ -91,7 +94,7 @@ def route_after_publisher(state: PipelineState, max_revisions: int) -> str:
     """Boucle de feedback n°2 : Publisher (bouton 🔁) → Content Writer."""
     if state.run.decision is Decision.REWRITE and state.iteration <= max_revisions + 2:
         return "content_writer"
-    return "analytics_tracker"
+    return "social_writer"
 
 
 #: Arêtes conditionnelles du graphe : nœud source → fonction de routage.
@@ -108,6 +111,7 @@ LINEAR_EDGES = {
     "content_writer": "technical_reviewer",
     "technical_reviewer": "seo_editor",
     "seo_editor": "quality_gate",
+    "social_writer": "analytics_tracker",
     "analytics_tracker": END,
 }
 

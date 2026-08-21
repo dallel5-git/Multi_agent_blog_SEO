@@ -54,7 +54,9 @@ Médias TN (RSS) ──┘      Watcher                        5. Technical Revi
                                               │                │                 │
                                               └────────┬───────┘        (retour agent 4)
                                                        ▼
-                                              9. Analytics Tracker
+                                              9. Social Writer (si publié)
+                                                       ▼
+                                              10. Analytics Tracker
 ```
 
 **Rien n'est publié sans votre clic.** Un brouillon est systématiquement écrit
@@ -174,7 +176,7 @@ make offline
 ```
 
 Utilise un LLM factice. Aucun appel réseau, aucune clé consommée. Cela valide que
-toute la mécanique fonctionne : les 9 agents, la boucle de feedback, l'écriture
+toute la mécanique fonctionne : les 10 agents, la boucle de feedback, l'écriture
 du `.mdx`. **Faites-le en premier.**
 
 ### Étape 3 — un vrai run, mais sans publier
@@ -307,7 +309,7 @@ src/blogseo/
 │   └── errors.py
 │
 ├── application/             ← ne dépend que des ports
-│   ├── agents/              les 9 agents
+│   ├── agents/              les 10 agents
 │   ├── prompts/             prompts système, documentés en français
 │   ├── dto/                 PipelineState (l'objet qui circule entre agents)
 │   └── use_cases/           GenerateArticleUseCase

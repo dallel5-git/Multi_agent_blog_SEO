@@ -188,7 +188,7 @@ notification = modifier ce fichier uniquement.
 
 ---
 
-## 6. Les 9 agents
+## 6. Les 10 agents
 
 | # | Agent | Rôle | LLM ? | Critique ? |
 |---|---|---|---|---|
@@ -200,7 +200,8 @@ notification = modifier ce fichier uniquement.
 | 6 | **SEO Editor** | meta title/description, slug, alt-text, maillage interne | oui + validation déterministe | **oui** |
 | 7 | **Quality Gate** | Checklist de validation | **NON, 100 % déterministe** | **oui** |
 | 8 | **Publisher** | Couverture, validation Telegram, écriture, Git | non | **oui** |
-| 9 | **Analytics Tracker** | Réindexation anti-doublon + feedback perf (stub) | non | non |
+| 9 | **Social Writer** | Post LinkedIn + thread X (Telegram, copier-coller manuel), seulement si publié | oui | non |
+| 10 | **Analytics Tracker** | Réindexation anti-doublon + feedback perf (stub) | non | non |
 
 « Non critique » = une exception de cet agent est journalisée puis avalée ; le
 pipeline continue en mode dégradé. Une veille morte ne doit pas empêcher

@@ -18,6 +18,7 @@ from ...application.agents.keyword_analyst import KeywordAnalystAgent
 from ...application.agents.publisher import PublisherAgent
 from ...application.agents.quality_gate import QualityGateAgent
 from ...application.agents.seo_editor import SeoEditorAgent
+from ...application.agents.social_writer import SocialWriterAgent
 from ...application.agents.technical_reviewer import TechnicalReviewerAgent
 from ...application.agents.trend_scout import TrendScoutAgent
 from ...application.agents.tunisia_watcher import TunisiaWatcherAgent
@@ -319,6 +320,11 @@ class Container:
                 ),
                 commit_prefix=s.publishing.commit_prefix,
                 blog_url=s.content.blog_url,
+            ),
+            social_writer=SocialWriterAgent(
+                llm, self.telegram,
+                blog_url=s.content.blog_url,
+                temperature=s.llm.temperature_creative,
             ),
             analytics_tracker=AnalyticsTrackerAgent(self.analytics, self.history),
         )

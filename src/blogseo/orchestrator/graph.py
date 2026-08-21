@@ -1,4 +1,4 @@
-"""Exécuteur LangGraph : le graphe d'états des 9 agents.
+"""Exécuteur LangGraph : le graphe d'états des 10 agents.
 
 LangGraph apporte ici trois choses concrètes par rapport à une boucle Python :
 1. les **boucles conditionnelles** (Quality Gate → Content Writer, bouton 🔁 →
@@ -83,7 +83,7 @@ class LangGraphOrchestrator:
         builder.add_conditional_edges(
             "publisher",
             self._router("publisher"),
-            {"content_writer": "content_writer", "analytics_tracker": "analytics_tracker"},
+            {"content_writer": "content_writer", "social_writer": "social_writer"},
         )
 
         builder.set_entry_point(ENTRY_POINT)
@@ -149,7 +149,7 @@ def build_orchestrator(agents: AgentBundle, *, preferred: str = "langgraph", max
 
     try:
         orchestrator = LangGraphOrchestrator(agents, max_revisions=max_revisions)
-        logger.info("Orchestrateur : LangGraph (9 nœuds, 2 boucles de feedback)")
+        logger.info("Orchestrateur : LangGraph (10 nœuds, 2 boucles de feedback)")
         return orchestrator
     except Exception as exc:  # noqa: BLE001
         logger.warning("Compilation du graphe LangGraph impossible (%s) : repli séquentiel", exc)

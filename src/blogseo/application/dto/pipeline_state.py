@@ -64,6 +64,10 @@ class PipelineState:
     cover_path: str = ""
     commit_sha: str = ""
 
+    # --- Agent 10 : Social Writer --------------------------------------- #
+    linkedin_post: str = ""
+    x_thread: tuple[str, ...] = ()
+
     # --- Divers -------------------------------------------------------- #
     warnings: list[str] = field(default_factory=list)
     research_context: str = ""

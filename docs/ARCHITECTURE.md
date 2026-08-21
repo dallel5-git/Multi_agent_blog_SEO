@@ -84,7 +84,7 @@ l'implémentation.
 
 ---
 
-## 3. Le pipeline des 9 agents
+## 3. Le pipeline des 10 agents
 
 ### Contrat commun
 
@@ -117,7 +117,8 @@ journalisation, et décision « je propage l'exception ou je dégrade ».
 | 6 | SEO Editor | `article`, `topic` | `article.seo`, `article.slug` | oui | **oui** |
 | 7 | Quality Gate | `article`, `review`, `topic` | `quality`, `revision_instructions` | **non** | **oui** |
 | 8 | Publisher | `article`, `quality` | `draft_path`, `published_path`, `commit_sha` | non | **oui** |
-| 9 | Analytics Tracker | `article`, `run.status` | `performance_feedback` | non | non |
+| 9 | Social Writer | `article`, `run.status` | `linkedin_post`, `x_thread` | oui | non |
+| 10 | Analytics Tracker | `article`, `run.status` | `performance_feedback` | non | non |
 
 ### Les deux boucles de feedback
 
@@ -131,6 +132,9 @@ journalisation, et décision « je propage l'exception ou je dégrade ».
                           │                                        │ (OK)
                           │                                        ▼
                           └──────────── (bouton 🔁) ──────────  publisher
+                                                                   │
+                                                                   ▼
+                                                            social_writer
                                                                    │
                                                                    ▼
                                                           analytics_tracker
@@ -249,7 +253,7 @@ Aucune base de données à installer. Tout est lisible à l'œil nu pour le déb
 | Changer de LLM | Nouvelle classe implémentant `LLMPort`, ajoutée à la chaîne |
 | Notifier sur Slack/Discord | Nouvel adapter de `NotifierPort` + `HumanReviewPort` |
 | Publier vers un CMS | Nouvel adapter de `ArticleWriterPort` / `GitPublisherPort` |
-| Ajouter un 10ᵉ agent | Sous-classe de `Agent` + entrée dans `AgentBundle` + arête |
+| Ajouter un 11ᵉ agent | Sous-classe de `Agent` + entrée dans `AgentBundle` + arête (le Social Writer, agent 9, en est l'exemple concret) |
 | Publier sur plusieurs blogs | Paramétrer `blog_content_dir` par profil de configuration |
 
 Dans tous les cas : **aucune modification des agents existants n'est requise.**
