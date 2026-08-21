@@ -24,6 +24,7 @@ from ...application.agents.tunisia_watcher import TunisiaWatcherAgent
 from ...domain.entities.pipeline_run import Decision
 from ...domain.entities.trend import TrendOrigin
 from ...domain.ports.llm import LLMPort
+from ...domain.ports.search import SearchPort, TrendsPort
 from ...orchestrator.graph import build_orchestrator
 from ...orchestrator.pipeline_spec import AgentBundle
 from ...shared.rate_limiter import RateLimitConfig, RateLimiter
@@ -41,11 +42,13 @@ from ..publishing.git_publisher import GitPublisher
 from ..publishing.mdx_writer import MdxArticleWriter
 from ..search.composite import CompositeSearch
 from ..search.duckduckgo import DuckDuckGoSearch
+from ..search.null_search import NullSearch
 from ..search.tavily import TavilySearch
 from ..sources.devto import DevToSource
 from ..sources.hackernews import HackerNewsSource
 from ..sources.reddit import RedditSource
 from ..sources.rss import DEFAULT_GLOBAL_FEEDS, RssSource
+from ..trends.null_trends import NullTrends
 from ..trends.pytrends_adapter import PyTrendsAdapter
 from ..vectorstore.chroma_history import ChromaArticleHistory
 from .settings import Settings
@@ -111,18 +114,25 @@ class Container:
     # Recherche et veille
     # ------------------------------------------------------------------ #
     @cached_property
-    def search(self) -> CompositeSearch:
+    def search(self) -> SearchPort:
+        if self.offline:
+            return NullSearch()
         engines = [DuckDuckGoSearch(delay_s=self.settings.search.request_delay_s)]
         if self.settings.search.tavily_api_key:
             engines.append(TavilySearch(self.settings.search.tavily_api_key))
         return CompositeSearch(engines)
 
     @cached_property
-    def trends(self) -> PyTrendsAdapter:
+    def trends(self) -> TrendsPort:
+        if self.offline:
+            return NullTrends()
         return PyTrendsAdapter()
 
     @cached_property
     def global_sources(self) -> list:
+        if self.offline:
+            logger.warning("Mode hors ligne : veille mondiale désactivée (aucun appel réseau)")
+            return []
         cfg = self.settings.sources
         return [
             HackerNewsSource(limit=cfg.hackernews_limit, timeout_s=cfg.http_timeout_s,
@@ -137,6 +147,8 @@ class Container:
 
     @cached_property
     def tunisia_rss(self) -> RssSource | None:
+        if self.offline:
+            return None
         feeds = self.settings.sources.tunisia_rss_feeds
         if not feeds:
             return None
