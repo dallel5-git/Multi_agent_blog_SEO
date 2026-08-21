@@ -29,6 +29,20 @@ DEFAULT_GLOBAL_FEEDS = (
     "https://n8n.io/blog/rss.xml",
 )
 
+#: Médias tunisiens vérifiés (HTTP 200, RSS valide, contenu à jour) — voir
+#: issue #38. Mélange volontaire d'un titre tech/culture (Tekiano) et de
+#: médias économie/business qui couvrent régulièrement startups et
+#: digitalisation, cohérent avec l'angle éditorial du blog (PME, Startup Act,
+#: écosystème tunisien) plutôt qu'une presse tech pure, quasi inexistante en
+#: Tunisie sous forme de flux RSS actif.
+DEFAULT_TUNISIA_FEEDS = (
+    "https://www.tekiano.com/feed/",                                # tech & culture numérique
+    "https://www.leconomistemaghrebin.com/tag/startup/feed/",       # startups, levées de fonds, Startup Act
+    "https://www.espacemanager.com/category/economie/feed",         # économie tunisienne, investissement, PME
+    "https://africanmanager.com/feed/",                              # business & économie Tunisie/Afrique
+    "https://kapitalis.com/tunisie/feed/",                           # actualité Tunisie généraliste
+)
+
 
 def _clean_html(text: str) -> str:
     return _TAG_PATTERN.sub("", text or "").replace("&nbsp;", " ").strip()

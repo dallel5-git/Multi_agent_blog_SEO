@@ -13,6 +13,8 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..sources.rss import DEFAULT_TUNISIA_FEEDS
+
 logger = logging.getLogger(__name__)
 
 # Racine du projet = 4 niveaux au-dessus de ce fichier.
@@ -126,12 +128,20 @@ class SourcesSettings:
         "artificial", "LocalLLaMA", "n8n", "automation", "Python", "AI_Agents",
     )
     reddit_limit: int = 15
-    tunisia_rss_feeds: tuple[str, ...] = ()
+    tunisia_rss_feeds: tuple[str, ...] = DEFAULT_TUNISIA_FEEDS
     tunisia_queries: tuple[str, ...] = (
+        # Génériques (IA, automatisation, numérique).
         "startup Tunisie intelligence artificielle",
         "PME tunisienne digitalisation automatisation",
         "Tunisie développeurs IA freelance",
         "loi startup act Tunisie numérique",
+        # Secteurs.
+        "fintech Tunisie startup",
+        "agritech Tunisie innovation numérique",
+        # Villes (écosystèmes tech en dehors de Tunis).
+        "Sfax Sousse écosystème tech startup",
+        # Programmes d'accompagnement.
+        "Smart Tunisia Flat6Labs Tunis programme startups",
     )
     user_agent: str = "blogseo-agents/1.0 (+https://github.com/dallel5-git/Multi_agent_blog_SEO)"
     http_timeout_s: int = 20
@@ -308,7 +318,7 @@ class Settings:
                     "REDDIT_SUBREDDITS",
                     "artificial,LocalLLaMA,n8n,automation,Python,AI_Agents",
                 ),
-                tunisia_rss_feeds=_env_list("TUNISIA_RSS_FEEDS"),
+                tunisia_rss_feeds=_env_list("TUNISIA_RSS_FEEDS", ",".join(DEFAULT_TUNISIA_FEEDS)),
             ),
             content=ContentSettings(
                 min_words=_env_int("ARTICLE_MIN_WORDS", 1_200),
