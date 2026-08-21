@@ -30,7 +30,7 @@ class GeminiLLM(LLMPort):
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-2.0-flash",
+        model: str = "gemini-3.6-flash",
         *,
         rate_limiter: RateLimiter | None = None,
         timeout_s: int = 120,

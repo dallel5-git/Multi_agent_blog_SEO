@@ -29,7 +29,7 @@ class GroqLLM(LLMPort):
     def __init__(
         self,
         api_key: str,
-        model: str = "llama-3.3-70b-versatile",
+        model: str = "openai/gpt-oss-20b",
         *,
         rate_limiter: RateLimiter | None = None,
         timeout_s: int = 120,

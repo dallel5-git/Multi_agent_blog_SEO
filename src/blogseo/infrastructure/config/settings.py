@@ -87,12 +87,16 @@ class LLMSettings:
     """Fournisseurs LLM : Gemini en principal, Groq en secours. 100 % free tier."""
 
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    # gemini-2.0-flash a été déprécié par Google (HTTP 404, migration suggérée
+    # par l'API elle-même) ; gemini-3.6-flash est le remplacement recommandé.
+    gemini_model: str = "gemini-3.6-flash"
     gemini_rpm: int = 15
     gemini_rpd: int = 1_500
 
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    # llama-3.3-70b-versatile n'existe plus chez Groq (HTTP 404) ; openai/gpt-oss-20b
+    # est rapide, gratuit, et compatible avec le mode JSON strict utilisé par les agents.
+    groq_model: str = "openai/gpt-oss-20b"
     groq_rpm: int = 30
     groq_rpd: int = 14_400
 
@@ -294,11 +298,11 @@ class Settings:
         return cls(
             llm=LLMSettings(
                 gemini_api_key=_env("GEMINI_API_KEY"),
-                gemini_model=_env("GEMINI_MODEL", "gemini-2.0-flash"),
+                gemini_model=_env("GEMINI_MODEL", "gemini-3.6-flash"),
                 gemini_rpm=_env_int("GEMINI_RPM", 15),
                 gemini_rpd=_env_int("GEMINI_RPD", 1_500),
                 groq_api_key=_env("GROQ_API_KEY"),
-                groq_model=_env("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                groq_model=_env("GROQ_MODEL", "openai/gpt-oss-20b"),
                 groq_rpm=_env_int("GROQ_RPM", 30),
                 groq_rpd=_env_int("GROQ_RPD", 14_400),
                 temperature_creative=_env_float("LLM_TEMPERATURE_CREATIVE", 0.75),
