@@ -36,8 +36,7 @@ non négociable et prime sur toute considération de performance ou d'élégance
 
 | Besoin | Service retenu | Clé requise | Quota gratuit |
 |---|---|---|---|
-| LLM principal | **Cerebras** (`llama-3.3-70b`) — [ADR 0006](docs/adr/0006-cerebras-remplace-gemini.md), remplace Gemini | oui, gratuite | voir docs fournisseur |
-| LLM de secours | **Groq** (`openai/gpt-oss-20b`) | oui, gratuite | ~30 req/min |
+| LLM (chaîne à 4) | **Groq → OpenRouter → Cerebras → Gemini** — [ADR 0007](docs/adr/0007-chaine-llm-a-quatre-fournisseurs.md) | au moins 1 clé | voir docs fournisseur |
 | Recherche web | **DuckDuckGo** (`ddgs`) | **aucune** | non déclaré |
 | Recherche (repli) | **Tavily** | optionnelle | 1000 req/mois |
 | Tendances | **pytrends** (Google Trends) | **aucune** | non déclaré |

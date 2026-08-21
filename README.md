@@ -93,23 +93,12 @@ cp .env.example .env
 nano .env
 ```
 
-Il vous faut **au minimum** une clé Cerebras. Comptez 5 minutes, aucune carte
-bancaire n'est demandée nulle part.
+Il vous faut **au minimum une clé parmi les quatre ci-dessous** (Groq
+recommandé, le plus fiable en pratique). Chaque clé supplémentaire allonge la
+chaîne de secours automatique — voir [ADR 0007](docs/adr/0007-chaine-llm-a-quatre-fournisseurs.md).
+Comptez 5 minutes par clé, aucune carte bancaire n'est demandée nulle part.
 
-### 3.1 Cerebras — LLM principal (obligatoire)
-
-1. Allez sur https://cloud.cerebras.ai (Platform → API Keys)
-2. Créez un compte gratuit → **Create API key**
-3. Collez la clé dans `.env` :
-
-```env
-CEREBRAS_API_KEY=...
-CEREBRAS_MODEL=llama-3.3-70b
-```
-
-### 3.2 Groq — LLM de secours (fortement recommandé)
-
-Si Cerebras atteint son quota (HTTP 429), le pipeline bascule automatiquement.
+### 3.1 Groq — LLM en tête de chaîne (recommandé)
 
 1. https://console.groq.com/keys → **Create API Key**
 
@@ -117,6 +106,22 @@ Si Cerebras atteint son quota (HTTP 429), le pipeline bascule automatiquement.
 GROQ_API_KEY=gsk_...
 GROQ_MODEL=openai/gpt-oss-20b
 ```
+
+### 3.2 OpenRouter, Cerebras, Gemini — fournisseurs de secours (optionnels)
+
+Si le fournisseur précédent atteint son quota ou tombe en panne (HTTP 429 ou
+5xx), le pipeline bascule automatiquement au suivant dans l'ordre Groq →
+OpenRouter → Cerebras → Gemini. Renseignez-en autant que vous voulez :
+
+```env
+OPENROUTER_API_KEY=...    # https://openrouter.ai/keys
+CEREBRAS_API_KEY=...      # https://cloud.cerebras.ai (Platform → API Keys)
+GEMINI_API_KEY=...        # https://aistudio.google.com/apikey
+```
+
+Voir `.env.example` pour le détail de chaque fournisseur (modèle par défaut,
+quotas, particularités observées — ex. certains comptes Cerebras exigent une
+facturation activée même en free tier).
 
 ### 3.3 Telegram — votre télécommande de publication (recommandé)
 
@@ -304,7 +309,7 @@ src/blogseo/
 │   └── use_cases/           GenerateArticleUseCase
 │
 ├── infrastructure/          ← implémente les ports
-│   ├── llm/                 cerebras.py, groq.py, gemini.py (non câblé), fallback_chain.py, fake.py
+│   ├── llm/                 groq.py, openrouter.py, cerebras.py, gemini.py, fallback_chain.py, fake.py
 │   ├── search/              duckduckgo.py, tavily.py, composite.py
 │   ├── sources/             hackernews.py, reddit.py, devto.py, rss.py
 │   ├── trends/              pytrends_adapter.py
@@ -344,8 +349,10 @@ Aucun autre fichier à toucher.
 
 | Service | Free tier | Carte bancaire ? |
 |---|---|---|
-| Cerebras | free tier généreux (voir docs fournisseur) | ❌ non |
 | Groq | ~30 req/min | ❌ non |
+| OpenRouter (`:free`) | limité mais suffisant en secours | ❌ non |
+| Cerebras | free tier (facturation parfois requise selon le compte) | ❌ non |
+| Google Gemini | ~15 req/min, ~1500/jour | ❌ non |
 | DuckDuckGo (`ddgs`) | illimité en pratique | ❌ aucune inscription |
 | Google Trends (`pytrends`) | gratuit | ❌ aucune inscription |
 | Hacker News / Reddit / dev.to | API publiques | ❌ aucune inscription |
@@ -355,7 +362,7 @@ Aucun autre fichier à toucher.
 | Vercel (blog existant) | Hobby | ❌ non |
 
 **Consommation par run :** 7 à 9 appels LLM en cas nominal (jusqu'à 13 avec deux
-révisions) — largement sous les quotas gratuits Cerebras/Groq pour un run
+révisions) — largement sous les quotas gratuits de la chaîne pour un run
 toutes les 48 h.
 
 Aucun SDK ni appel vers un service payant n'est présent dans le code — ni en
@@ -370,7 +377,7 @@ option, ni en commentaire.
 
 **« Aucune clé LLM configurée »**
 → Le pipeline bascule sur le LLM factice et produit un article d'exemple.
-Renseignez `CEREBRAS_API_KEY` dans `.env`.
+Renseignez au moins une clé (`GROQ_API_KEY` recommandée) dans `.env`.
 
 **« Telegram inactif »**
 → `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` manquants. Sans eux, les articles sont
@@ -393,9 +400,10 @@ juste moins fin. `pip install chromadb` pour le mode complet.
 → Votre blog couvre déjà beaucoup de terrain sur ce thème. Baissez
 `DUPLICATE_THRESHOLD` (0.90 par exemple) ou élargissez les sources de veille.
 
-**Quota Cerebras épuisé**
-→ La bascule vers Groq est automatique. Vérifiez dans les logs :
-`[chaîne LLM] cerebras a atteint son quota → bascule`.
+**Quota d'un fournisseur LLM épuisé**
+→ La bascule vers le suivant de la chaîne (Groq → OpenRouter → Cerebras →
+Gemini) est automatique. Vérifiez dans les logs :
+`[chaîne LLM] <fournisseur> a atteint son quota → bascule`.
 
 **DuckDuckGo renvoie 0 résultat**
 → Augmentez `SEARCH_DELAY_S` à 4 ou 5, ou ajoutez une clé Tavily.

@@ -84,17 +84,14 @@ def _env_list(key: str, default: str = "") -> tuple[str, ...]:
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True, slots=True)
 class LLMSettings:
-    """Fournisseurs LLM : Cerebras en principal, Groq en secours. 100 % free tier.
+    """Chaîne à 4 fournisseurs LLM, tous 100 % free tier, dans cet ordre :
 
-    Gemini a été retiré de la chaîne par défaut (projet Google bloqué au
-    moment du remplacement, indépendamment de la clé) ; l'adapter `GeminiLLM`
-    reste disponible dans le code pour qui veut le recâbler manuellement.
+    Groq → OpenRouter → Cerebras → Gemini (voir ADR 0007). L'ordre reflète la
+    fiabilité observée lors des tests, pas une hiérarchie de qualité : chaque
+    fournisseur gratuit peut ponctuellement être en panne, en quota, ou (pour
+    Cerebras/Gemini au moment de l'écriture) bloqué côté compte — la chaîne
+    encaisse ces pannes individuelles sans jamais bloquer un run.
     """
-
-    cerebras_api_key: str = ""
-    cerebras_model: str = "llama-3.3-70b"
-    cerebras_rpm: int = 30
-    cerebras_rpd: int = 14_400
 
     groq_api_key: str = ""
     # llama-3.3-70b-versatile n'existe plus chez Groq (HTTP 404) ; openai/gpt-oss-20b
@@ -103,6 +100,21 @@ class LLMSettings:
     groq_rpm: int = 30
     groq_rpd: int = 14_400
 
+    openrouter_api_key: str = ""
+    openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
+    openrouter_rpm: int = 20
+    openrouter_rpd: int = 200  # OpenRouter free tier : ~50-1000/jour selon les crédits du compte
+
+    cerebras_api_key: str = ""
+    cerebras_model: str = "gpt-oss-120b"
+    cerebras_rpm: int = 30
+    cerebras_rpd: int = 14_400
+
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-3.6-flash"
+    gemini_rpm: int = 15
+    gemini_rpd: int = 1_500
+
     temperature_creative: float = 0.75  # Content Writer
     temperature_analytic: float = 0.25  # Keyword Analyst, SEO Editor, Reviewer
     max_output_tokens: int = 8_192
@@ -110,7 +122,10 @@ class LLMSettings:
 
     @property
     def has_any_provider(self) -> bool:
-        return bool(self.cerebras_api_key or self.groq_api_key)
+        return bool(
+            self.groq_api_key or self.openrouter_api_key
+            or self.cerebras_api_key or self.gemini_api_key
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -300,14 +315,22 @@ class Settings:
 
         return cls(
             llm=LLMSettings(
-                cerebras_api_key=_env("CEREBRAS_API_KEY"),
-                cerebras_model=_env("CEREBRAS_MODEL", "llama-3.3-70b"),
-                cerebras_rpm=_env_int("CEREBRAS_RPM", 30),
-                cerebras_rpd=_env_int("CEREBRAS_RPD", 14_400),
                 groq_api_key=_env("GROQ_API_KEY"),
                 groq_model=_env("GROQ_MODEL", "openai/gpt-oss-20b"),
                 groq_rpm=_env_int("GROQ_RPM", 30),
                 groq_rpd=_env_int("GROQ_RPD", 14_400),
+                openrouter_api_key=_env("OPENROUTER_API_KEY"),
+                openrouter_model=_env("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),
+                openrouter_rpm=_env_int("OPENROUTER_RPM", 20),
+                openrouter_rpd=_env_int("OPENROUTER_RPD", 200),
+                cerebras_api_key=_env("CEREBRAS_API_KEY"),
+                cerebras_model=_env("CEREBRAS_MODEL", "gpt-oss-120b"),
+                cerebras_rpm=_env_int("CEREBRAS_RPM", 30),
+                cerebras_rpd=_env_int("CEREBRAS_RPD", 14_400),
+                gemini_api_key=_env("GEMINI_API_KEY"),
+                gemini_model=_env("GEMINI_MODEL", "gemini-3.6-flash"),
+                gemini_rpm=_env_int("GEMINI_RPM", 15),
+                gemini_rpd=_env_int("GEMINI_RPD", 1_500),
                 temperature_creative=_env_float("LLM_TEMPERATURE_CREATIVE", 0.75),
                 temperature_analytic=_env_float("LLM_TEMPERATURE_ANALYTIC", 0.25),
                 max_output_tokens=_env_int("LLM_MAX_OUTPUT_TOKENS", 8_192),
@@ -369,8 +392,10 @@ class Settings:
             return "✅ configurée" if value else "❌ absente"
 
         return "\n".join([
-            f"  LLM principal   : Cerebras ({self.llm.cerebras_model}) — clé {flag(self.llm.cerebras_api_key)}",
-            f"  LLM de secours  : Groq ({self.llm.groq_model}) — clé {flag(self.llm.groq_api_key)}",
+            f"  LLM (ordre)     : 1. Groq ({self.llm.groq_model}) — clé {flag(self.llm.groq_api_key)}",
+            f"                    2. OpenRouter ({self.llm.openrouter_model}) — clé {flag(self.llm.openrouter_api_key)}",
+            f"                    3. Cerebras ({self.llm.cerebras_model}) — clé {flag(self.llm.cerebras_api_key)}",
+            f"                    4. Gemini ({self.llm.gemini_model}) — clé {flag(self.llm.gemini_api_key)}",
             f"  Recherche       : DuckDuckGo (sans clé) + Tavily {flag(self.search.tavily_api_key)}",
             f"  Telegram        : {'✅ configuré' if self.telegram.is_configured else '❌ non configuré'}",
             f"  Search Console  : {'✅ configuré' if self.search_console.is_configured else '❌ non configuré (repli : export manuel)'}",

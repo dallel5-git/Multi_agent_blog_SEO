@@ -3,6 +3,7 @@
 - **Statut :** accepté
 - **Date :** 2026-08-21
 - **Supersède partiellement :** ADR 0003 (ligne « LLM principal »)
+- **Complétée par :** [ADR 0007](0007-chaine-llm-a-quatre-fournisseurs.md) — Gemini réintégré comme 4ᵉ maillon d'une chaîne de secours, Cerebras n'est plus seul « après Groq »
 
 ## Contexte
 

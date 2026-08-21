@@ -36,7 +36,9 @@ from ..images.pollinations import PollinationsImageGenerator
 from ..llm.cerebras import CerebrasLLM
 from ..llm.fake import FakeLLM
 from ..llm.fallback_chain import FallbackLLM
+from ..llm.gemini import GeminiLLM
 from ..llm.groq import GroqLLM
+from ..llm.openrouter import OpenRouterLLM
 from ..notifications.telegram import NullNotifier, TelegramBot
 from ..persistence.json_run_repository import JsonRunRepository
 from ..persistence.mdx_article_source import MdxArticleSource
@@ -71,7 +73,9 @@ class Container:
     # ------------------------------------------------------------------ #
     @cached_property
     def llm(self) -> LLMPort:
-        """Chaîne Cerebras → Groq, ou LLM factice en mode hors ligne."""
+        """Chaîne à 4 fournisseurs (Groq → OpenRouter → Cerebras → Gemini, voir
+        ADR 0007), ou LLM factice en mode hors ligne. Seuls les fournisseurs
+        dont la clé est configurée entrent dans la chaîne."""
         if self.offline:
             logger.warning("Mode hors ligne : LLM factice (aucun appel réseau)")
             return FakeLLM(article_words=self.settings.content.min_words + 200)
@@ -79,17 +83,6 @@ class Container:
         cfg = self.settings.llm
         providers: list[LLMPort] = []
 
-        if cfg.cerebras_api_key:
-            providers.append(CerebrasLLM(
-                cfg.cerebras_api_key,
-                cfg.cerebras_model,
-                rate_limiter=RateLimiter(
-                    "cerebras",
-                    RateLimitConfig(cfg.cerebras_rpm, cfg.cerebras_rpd, min_interval_s=0.5),
-                    state_file=self.settings.storage.rate_limits / "cerebras.json",
-                ),
-                timeout_s=cfg.timeout_s,
-            ))
         if cfg.groq_api_key:
             providers.append(GroqLLM(
                 cfg.groq_api_key,
@@ -101,11 +94,45 @@ class Container:
                 ),
                 timeout_s=cfg.timeout_s,
             ))
+        if cfg.openrouter_api_key:
+            providers.append(OpenRouterLLM(
+                cfg.openrouter_api_key,
+                cfg.openrouter_model,
+                rate_limiter=RateLimiter(
+                    "openrouter",
+                    RateLimitConfig(cfg.openrouter_rpm, cfg.openrouter_rpd, min_interval_s=1.0),
+                    state_file=self.settings.storage.rate_limits / "openrouter.json",
+                ),
+                timeout_s=cfg.timeout_s,
+            ))
+        if cfg.cerebras_api_key:
+            providers.append(CerebrasLLM(
+                cfg.cerebras_api_key,
+                cfg.cerebras_model,
+                rate_limiter=RateLimiter(
+                    "cerebras",
+                    RateLimitConfig(cfg.cerebras_rpm, cfg.cerebras_rpd, min_interval_s=0.5),
+                    state_file=self.settings.storage.rate_limits / "cerebras.json",
+                ),
+                timeout_s=cfg.timeout_s,
+            ))
+        if cfg.gemini_api_key:
+            providers.append(GeminiLLM(
+                cfg.gemini_api_key,
+                cfg.gemini_model,
+                rate_limiter=RateLimiter(
+                    "gemini",
+                    RateLimitConfig(cfg.gemini_rpm, cfg.gemini_rpd, min_interval_s=1.0),
+                    state_file=self.settings.storage.rate_limits / "gemini.json",
+                ),
+                timeout_s=cfg.timeout_s,
+            ))
 
         if not providers:
             logger.warning(
-                "Aucune clé LLM configurée (CEREBRAS_API_KEY / GROQ_API_KEY) : "
-                "bascule automatique sur le LLM factice. Les articles seront des exemples."
+                "Aucune clé LLM configurée (GROQ_API_KEY / OPENROUTER_API_KEY / "
+                "CEREBRAS_API_KEY / GEMINI_API_KEY) : bascule automatique sur le LLM "
+                "factice. Les articles seront des exemples."
             )
             return FakeLLM(article_words=self.settings.content.min_words + 200)
 
