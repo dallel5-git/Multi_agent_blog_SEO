@@ -3,7 +3,7 @@ PY ?= python3
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: help install install-dev check test lint fmt dry-run offline run index runs graph scheduler clean
+.PHONY: help install install-dev check test lint fmt dry-run offline run index runs graph dashboard scheduler clean
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -42,6 +42,9 @@ runs: ## Liste les derniers runs
 
 graph: ## Affiche le diagramme du pipeline
 	$(BIN)/blogseo graph
+
+dashboard: ## Génère le tableau de bord HTML local et l'ouvre dans le navigateur
+	$(BIN)/blogseo dashboard --open
 
 scheduler: ## Démarre le planificateur local (toutes les 48 h)
 	$(BIN)/python -m blogseo.interfaces.scheduler

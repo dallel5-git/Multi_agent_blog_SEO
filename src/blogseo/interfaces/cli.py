@@ -8,6 +8,7 @@ Commandes disponibles :
     blogseo index          (Ré)indexe les articles existants pour l'anti-doublon
     blogseo runs           Liste les derniers runs
     blogseo show <run_id>  Détaille un run
+    blogseo dashboard      Génère un tableau de bord HTML local des runs
     blogseo graph          Affiche le diagramme Mermaid du pipeline
 """
 
@@ -15,12 +16,15 @@ from __future__ import annotations
 
 import argparse
 import sys
+import webbrowser
+from pathlib import Path
 
 from ..application.use_cases.generate_article import GenerateArticleUseCase
 from ..domain.entities.pipeline_run import RunStatus
 from ..infrastructure.config.container import Container
 from ..infrastructure.config.logging_config import setup_logging
 from ..infrastructure.config.settings import Settings
+from .dashboard import write_dashboard
 
 EXIT_OK = 0
 EXIT_ERROR = 1
@@ -64,6 +68,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     show_cmd = sub.add_parser("show", help="Détaille un run")
     show_cmd.add_argument("run_id")
+
+    dashboard_cmd = sub.add_parser("dashboard", help="Génère un tableau de bord HTML local des runs")
+    dashboard_cmd.add_argument("-o", "--output", type=Path, default=None,
+                               help="Chemin du fichier HTML (défaut : storage/dashboard.html)")
+    dashboard_cmd.add_argument("--open", dest="open_browser", action="store_true",
+                               help="Ouvre la page dans le navigateur après génération")
 
     return parser
 
@@ -196,6 +206,23 @@ def cmd_show(container: Container, run_id: str) -> int:
     return EXIT_OK
 
 
+def cmd_dashboard(container: Container, output: Path | None, open_browser: bool) -> int:
+    runs = container.run_repository.list_recent(limit=100_000)
+    output_path = output or (container.settings.storage.root / "dashboard.html")
+
+    if not runs:
+        print("Aucun run enregistré : le tableau de bord sera vide. Lancez `blogseo run` d'abord.")
+
+    written = write_dashboard(runs, output_path)
+    print(f"✅ Tableau de bord généré : {written} ({len(runs)} run(s))")
+    print(f"   Ouvrez-le directement dans un navigateur : file://{written.resolve()}")
+
+    if open_browser:
+        webbrowser.open(f"file://{written.resolve()}")
+
+    return EXIT_OK
+
+
 def cmd_run(container: Container, args) -> int:
     use_case = GenerateArticleUseCase(
         container.orchestrator,
@@ -274,6 +301,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_runs(container, args.limit)
     if args.command == "show":
         return cmd_show(container, args.run_id)
+    if args.command == "dashboard":
+        return cmd_dashboard(container, args.output, args.open_browser)
     if args.command == "run":
         return cmd_run(container, args)
 

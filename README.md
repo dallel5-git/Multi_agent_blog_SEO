@@ -288,9 +288,11 @@ systemctl --user stop    blogseo.timer     # mettre en pause
 | `blogseo graph` | Affiche le diagramme Mermaid du pipeline |
 | `blogseo runs` | Liste les derniers runs |
 | `blogseo show <run_id>` | Détaille un run étape par étape |
+| `blogseo dashboard` | Génère un tableau de bord HTML local (`storage/dashboard.html`) |
+| `blogseo dashboard --open` | Idem, puis l'ouvre dans le navigateur |
 
 Équivalents `make` : `check`, `offline`, `dry-run`, `run`, `index`, `graph`,
-`runs`, `scheduler`, `test`, `lint`.
+`runs`, `dashboard`, `scheduler`, `test`, `lint`.
 
 ---
 
