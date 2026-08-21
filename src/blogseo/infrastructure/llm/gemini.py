@@ -1,4 +1,9 @@
-"""Adapter LLM Google Gemini (free tier) — fournisseur principal.
+"""Adapter LLM Google Gemini (free tier).
+
+Non câblé par défaut dans `Container.llm` (remplacé par `CerebrasLLM` comme
+fournisseur principal — voir ADR 0003). Classe conservée telle quelle : pour
+la réutiliser, il suffit de l'ajouter à la liste `providers` de
+`Container.llm` (`infrastructure/config/container.py`).
 
 Appel direct à l'API REST `generativelanguage.googleapis.com` via `requests` :
 pas de SDK lourd, pas de dépendance qui change d'API tous les deux mois, et un

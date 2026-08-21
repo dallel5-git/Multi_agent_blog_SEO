@@ -14,7 +14,7 @@ public tunisien où le paiement en ligne international est difficile.
 
 | Besoin | Retenu | Écarté |
 |---|---|---|
-| LLM principal | Google Gemini free tier | OpenAI, Anthropic (payants) |
+| LLM principal | ~~Google Gemini free tier~~ Cerebras free tier ([ADR 0006](0006-cerebras-remplace-gemini.md)) | OpenAI, Anthropic (payants) |
 | LLM secours | Groq free tier | — |
 | Recherche | `ddgs` (DuckDuckGo), Tavily free tier en option | SerpAPI (payant) |
 | Tendances | `pytrends` | Semrush, Ahrefs (payants) |

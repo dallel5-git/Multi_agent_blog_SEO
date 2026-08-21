@@ -22,7 +22,7 @@ def isolated_env(tmp_path, monkeypatch):
     storage = tmp_path / "storage"
 
     for key in (
-        "GEMINI_API_KEY", "GROQ_API_KEY", "TAVILY_API_KEY",
+        "CEREBRAS_API_KEY", "GROQ_API_KEY", "TAVILY_API_KEY",
         "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
     ):
         monkeypatch.delenv(key, raising=False)

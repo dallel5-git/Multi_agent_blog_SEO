@@ -1,4 +1,4 @@
-"""Tests de la chaîne LLM (bascule Gemini → Groq) et du rate limiter."""
+"""Tests de la chaîne LLM (bascule Cerebras → Groq) et du rate limiter."""
 
 from __future__ import annotations
 
@@ -29,19 +29,19 @@ class StubLLM(LLMPort):
 
 class TestChaineDeFallback:
     def test_utilise_le_premier_fournisseur_disponible(self):
-        primaire, secours = StubLLM("gemini"), StubLLM("groq")
+        primaire, secours = StubLLM("cerebras"), StubLLM("groq")
         chain = FallbackLLM([primaire, secours])
-        assert chain.generate("s", "u").provider == "gemini"
+        assert chain.generate("s", "u").provider == "cerebras"
         assert secours.calls == 0
 
     def test_bascule_sur_quota_429(self):
-        primaire = StubLLM("gemini", error=QuotaExceededError("429"))
+        primaire = StubLLM("cerebras", error=QuotaExceededError("429"))
         secours = StubLLM("groq")
         chain = FallbackLLM([primaire, secours])
         assert chain.generate("s", "u").provider == "groq"
 
     def test_un_fournisseur_en_quota_est_ecarte_pour_la_suite_du_run(self):
-        primaire = StubLLM("gemini", error=QuotaExceededError("429"))
+        primaire = StubLLM("cerebras", error=QuotaExceededError("429"))
         secours = StubLLM("groq")
         chain = FallbackLLM([primaire, secours])
         chain.generate("s", "u")
@@ -51,7 +51,7 @@ class TestChaineDeFallback:
         assert secours.calls == 2
 
     def test_bascule_sur_erreur_reseau_sans_ecarter_definitivement(self):
-        primaire = StubLLM("gemini", error=LLMError("timeout"))
+        primaire = StubLLM("cerebras", error=LLMError("timeout"))
         secours = StubLLM("groq")
         chain = FallbackLLM([primaire, secours])
         chain.generate("s", "u")
@@ -59,22 +59,22 @@ class TestChaineDeFallback:
         assert primaire.calls == 2  # on retente au coup suivant
 
     def test_ignore_un_fournisseur_indisponible(self):
-        primaire = StubLLM("gemini", available=False)
+        primaire = StubLLM("cerebras", available=False)
         secours = StubLLM("groq")
         assert FallbackLLM([primaire, secours]).generate("s", "u").provider == "groq"
         assert primaire.calls == 0
 
     def test_leve_si_tout_echoue(self):
         chain = FallbackLLM([
-            StubLLM("gemini", error=QuotaExceededError("429")),
+            StubLLM("cerebras", error=QuotaExceededError("429")),
             StubLLM("groq", error=LLMError("500")),
         ])
         with pytest.raises(AllProvidersFailedError) as exc:
             chain.generate("s", "u")
-        assert "gemini" in str(exc.value) and "groq" in str(exc.value)
+        assert "cerebras" in str(exc.value) and "groq" in str(exc.value)
 
     def test_reset_rearme_les_fournisseurs(self):
-        primaire = StubLLM("gemini", error=QuotaExceededError("429"))
+        primaire = StubLLM("cerebras", error=QuotaExceededError("429"))
         chain = FallbackLLM([primaire, StubLLM("groq")])
         chain.generate("s", "u")
         chain.reset()
@@ -82,11 +82,11 @@ class TestChaineDeFallback:
         assert primaire.calls == 2
 
     def test_comptabilise_les_appels(self):
-        chain = FallbackLLM([StubLLM("gemini")])
+        chain = FallbackLLM([StubLLM("cerebras")])
         chain.generate("s", "u")
         chain.generate("s", "u")
-        assert chain.usage["gemini"] == 2
-        assert "gemini=2" in chain.stats()
+        assert chain.usage["cerebras"] == 2
+        assert "cerebras=2" in chain.stats()
 
     def test_refuse_une_chaine_vide(self):
         with pytest.raises(ValueError):

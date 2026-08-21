@@ -2,7 +2,7 @@
 
 Permet de dérouler tout le pipeline (9 agents, boucle de feedback, écriture du
 `.mdx`) sans aucune clé d'API et sans réseau. C'est le mode recommandé pour
-valider l'installation avant de configurer Gemini/Groq.
+valider l'installation avant de configurer Cerebras/Groq.
 """
 
 from __future__ import annotations

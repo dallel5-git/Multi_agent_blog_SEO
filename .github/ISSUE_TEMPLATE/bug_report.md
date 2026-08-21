@@ -22,7 +22,7 @@ labels: bug
 - `run_id` concerné (voir `blogseo runs`) :
 - Agent concerné (si connu) :
 - Version de Python :
-- LLM utilisé au moment de l'erreur (gemini / groq / fake) :
+- LLM utilisé au moment de l'erreur (cerebras / groq / fake) :
 
 ## Logs
 

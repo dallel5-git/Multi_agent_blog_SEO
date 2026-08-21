@@ -84,14 +84,17 @@ def _env_list(key: str, default: str = "") -> tuple[str, ...]:
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True, slots=True)
 class LLMSettings:
-    """Fournisseurs LLM : Gemini en principal, Groq en secours. 100 % free tier."""
+    """Fournisseurs LLM : Cerebras en principal, Groq en secours. 100 % free tier.
 
-    gemini_api_key: str = ""
-    # gemini-2.0-flash a été déprécié par Google (HTTP 404, migration suggérée
-    # par l'API elle-même) ; gemini-3.6-flash est le remplacement recommandé.
-    gemini_model: str = "gemini-3.6-flash"
-    gemini_rpm: int = 15
-    gemini_rpd: int = 1_500
+    Gemini a été retiré de la chaîne par défaut (projet Google bloqué au
+    moment du remplacement, indépendamment de la clé) ; l'adapter `GeminiLLM`
+    reste disponible dans le code pour qui veut le recâbler manuellement.
+    """
+
+    cerebras_api_key: str = ""
+    cerebras_model: str = "llama-3.3-70b"
+    cerebras_rpm: int = 30
+    cerebras_rpd: int = 14_400
 
     groq_api_key: str = ""
     # llama-3.3-70b-versatile n'existe plus chez Groq (HTTP 404) ; openai/gpt-oss-20b
@@ -107,7 +110,7 @@ class LLMSettings:
 
     @property
     def has_any_provider(self) -> bool:
-        return bool(self.gemini_api_key or self.groq_api_key)
+        return bool(self.cerebras_api_key or self.groq_api_key)
 
 
 @dataclass(frozen=True, slots=True)
@@ -297,10 +300,10 @@ class Settings:
 
         return cls(
             llm=LLMSettings(
-                gemini_api_key=_env("GEMINI_API_KEY"),
-                gemini_model=_env("GEMINI_MODEL", "gemini-3.6-flash"),
-                gemini_rpm=_env_int("GEMINI_RPM", 15),
-                gemini_rpd=_env_int("GEMINI_RPD", 1_500),
+                cerebras_api_key=_env("CEREBRAS_API_KEY"),
+                cerebras_model=_env("CEREBRAS_MODEL", "llama-3.3-70b"),
+                cerebras_rpm=_env_int("CEREBRAS_RPM", 30),
+                cerebras_rpd=_env_int("CEREBRAS_RPD", 14_400),
                 groq_api_key=_env("GROQ_API_KEY"),
                 groq_model=_env("GROQ_MODEL", "openai/gpt-oss-20b"),
                 groq_rpm=_env_int("GROQ_RPM", 30),
@@ -366,7 +369,7 @@ class Settings:
             return "✅ configurée" if value else "❌ absente"
 
         return "\n".join([
-            f"  LLM principal   : Gemini ({self.llm.gemini_model}) — clé {flag(self.llm.gemini_api_key)}",
+            f"  LLM principal   : Cerebras ({self.llm.cerebras_model}) — clé {flag(self.llm.cerebras_api_key)}",
             f"  LLM de secours  : Groq ({self.llm.groq_model}) — clé {flag(self.llm.groq_api_key)}",
             f"  Recherche       : DuckDuckGo (sans clé) + Tavily {flag(self.search.tavily_api_key)}",
             f"  Telegram        : {'✅ configuré' if self.telegram.is_configured else '❌ non configuré'}",

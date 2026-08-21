@@ -1,6 +1,6 @@
 """Port `LLMPort` : abstraction du modèle de langage.
 
-Aucune implémentation ne vit dans le domain. Les adapters Gemini et Groq
+Aucune implémentation ne vit dans le domain. Les adapters Cerebras et Groq
 (couche infrastructure) implémentent ce contrat, ce qui permet de remplacer le
 fournisseur — ou de le simuler dans les tests — sans toucher aux agents.
 """
@@ -30,7 +30,7 @@ class LLMResponse:
 class LLMPort(ABC):
     """Contrat minimal attendu par tous les agents."""
 
-    #: Nom lisible du fournisseur ("gemini", "groq", "fake"...).
+    #: Nom lisible du fournisseur ("cerebras", "groq", "fake"...).
     name: str = "llm"
 
     @abstractmethod

@@ -33,9 +33,9 @@ from ..analytics.search_console import SearchConsoleAnalytics
 from ..analytics.stub import FileAnalyticsStub
 from ..embeddings.sentence_transformers_adapter import SentenceTransformerEmbeddings
 from ..images.pollinations import PollinationsImageGenerator
+from ..llm.cerebras import CerebrasLLM
 from ..llm.fake import FakeLLM
 from ..llm.fallback_chain import FallbackLLM
-from ..llm.gemini import GeminiLLM
 from ..llm.groq import GroqLLM
 from ..notifications.telegram import NullNotifier, TelegramBot
 from ..persistence.json_run_repository import JsonRunRepository
@@ -71,7 +71,7 @@ class Container:
     # ------------------------------------------------------------------ #
     @cached_property
     def llm(self) -> LLMPort:
-        """Chaîne Gemini → Groq, ou LLM factice en mode hors ligne."""
+        """Chaîne Cerebras → Groq, ou LLM factice en mode hors ligne."""
         if self.offline:
             logger.warning("Mode hors ligne : LLM factice (aucun appel réseau)")
             return FakeLLM(article_words=self.settings.content.min_words + 200)
@@ -79,14 +79,14 @@ class Container:
         cfg = self.settings.llm
         providers: list[LLMPort] = []
 
-        if cfg.gemini_api_key:
-            providers.append(GeminiLLM(
-                cfg.gemini_api_key,
-                cfg.gemini_model,
+        if cfg.cerebras_api_key:
+            providers.append(CerebrasLLM(
+                cfg.cerebras_api_key,
+                cfg.cerebras_model,
                 rate_limiter=RateLimiter(
-                    "gemini",
-                    RateLimitConfig(cfg.gemini_rpm, cfg.gemini_rpd, min_interval_s=1.0),
-                    state_file=self.settings.storage.rate_limits / "gemini.json",
+                    "cerebras",
+                    RateLimitConfig(cfg.cerebras_rpm, cfg.cerebras_rpd, min_interval_s=0.5),
+                    state_file=self.settings.storage.rate_limits / "cerebras.json",
                 ),
                 timeout_s=cfg.timeout_s,
             ))
@@ -104,7 +104,7 @@ class Container:
 
         if not providers:
             logger.warning(
-                "Aucune clé LLM configurée (GEMINI_API_KEY / GROQ_API_KEY) : "
+                "Aucune clé LLM configurée (CEREBRAS_API_KEY / GROQ_API_KEY) : "
                 "bascule automatique sur le LLM factice. Les articles seront des exemples."
             )
             return FakeLLM(article_words=self.settings.content.min_words + 200)

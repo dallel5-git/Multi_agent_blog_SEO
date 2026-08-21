@@ -19,7 +19,7 @@ de dépendance stricte : **les dépendances ne pointent que vers l'intérieur**.
 │  domain/                entités, value objects, PORTS, erreurs      │
 │  ↑ ne dépend de RIEN (ni framework, ni requests, ni chemin disque)  │
 ├─────────────────────────────────────────────────────────────────────┤
-│  infrastructure/        adapters : Gemini, Groq, DuckDuckGo,        │
+│  infrastructure/        adapters : Cerebras, Groq, DuckDuckGo,      │
 │                         Chroma, Telegram, Git, Pollinations…        │
 │  ↑ implémente les ports du domain                                   │
 └─────────────────────────────────────────────────────────────────────┘
@@ -183,8 +183,8 @@ Un rejet produit `revision_instructions`, un texte structuré `[BLOQUANT]` /
 
 | Panne | Comportement |
 |---|---|
-| Gemini renvoie 429 | Bascule immédiate sur Groq, Gemini écarté pour le run |
-| Gemini renvoie 500 / timeout | Bascule sur Groq, Gemini retenté au prochain appel |
+| Cerebras renvoie 429 | Bascule immédiate sur Groq, Cerebras écarté pour le run |
+| Cerebras renvoie 500 / timeout | Bascule sur Groq, Cerebras retenté au prochain appel |
 | Tous les LLM en échec | `AllProvidersFailedError`, run en échec + notification Telegram |
 | Une source de veille morte | Journalisée, ignorée, les autres sources suffisent |
 | Toutes les sources mortes | Avertissement ; le Keyword Analyst travaille avec ce qu'il a |
@@ -231,7 +231,7 @@ storage/
 ├── chroma/          base vectorielle SQLite (ou fallback_index.json)
 ├── covers/          images générées
 ├── logs/            pipeline.log, rotatif 2 Mo × 5
-├── rate_limits/     quotas journaliers persistés (gemini.json, groq.json)
+├── rate_limits/     quotas journaliers persistés (cerebras.json, groq.json)
 ├── analytics/       performance.json (export Search Console manuel, optionnel)
 └── telegram_offset.json   offset getUpdates, évite de rejouer un vieux callback
 ```

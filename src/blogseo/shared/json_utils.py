@@ -1,6 +1,6 @@
 """Extraction tolérante de JSON depuis une réponse de LLM.
 
-Les modèles gratuits (Gemini Flash, Llama sur Groq) ajoutent régulièrement du
+Les modèles gratuits (Cerebras, Llama/GPT-OSS sur Groq) ajoutent régulièrement du
 texte autour du JSON, des fences ```json, des virgules finales ou des
 apostrophes typographiques. Cette fonction encaisse ces défauts plutôt que de
 faire planter tout le pipeline sur un `json.JSONDecodeError`.

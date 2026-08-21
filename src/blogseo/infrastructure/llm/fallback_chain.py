@@ -1,4 +1,4 @@
-"""Chaîne de fournisseurs LLM avec bascule automatique Gemini → Groq.
+"""Chaîne de fournisseurs LLM avec bascule automatique Cerebras → Groq.
 
 Le contrat `LLMPort` est respecté : les agents ne savent pas qu'ils parlent à
 une chaîne. Ils appellent `generate()` et obtiennent une réponse, quel que soit

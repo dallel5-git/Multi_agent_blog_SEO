@@ -1,7 +1,7 @@
 """Adapter Search Console réel — ferme la boucle de rétroaction performance.
 
 API REST directe (`searchconsole.googleapis.com`) via `requests` : pas de SDK
-`google-api-python-client`, dans le même esprit que `GeminiLLM`. L'API Search
+`google-api-python-client`, dans le même esprit que `CerebrasLLM`. L'API Search
 Console elle-même est gratuite et sans quota payant ; seule l'authentification
 OAuth 2.0 doit être mise en place une fois (voir `scripts/search_console_oauth.py`
 et la section 10 de `.env.example`).

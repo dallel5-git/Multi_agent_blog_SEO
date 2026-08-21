@@ -76,6 +76,6 @@ class TestModeEnLigneParDefaut:
         assert len(container.global_sources) > 0
 
     def test_llm_factice_si_aucune_cle_meme_en_ligne(self, tmp_path):
-        # Pas de GEMINI_API_KEY/GROQ_API_KEY dans l'environnement de test : repli sur FakeLLM.
+        # Pas de CEREBRAS_API_KEY/GROQ_API_KEY dans l'environnement de test : repli sur FakeLLM.
         container = Container(make_settings(tmp_path), offline=False)
         assert isinstance(container.llm, FakeLLM)

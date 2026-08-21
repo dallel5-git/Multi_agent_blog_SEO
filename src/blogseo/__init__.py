@@ -10,7 +10,7 @@ Architecture en couches (Clean Architecture) :
         ↓
     domain/          entités, value objects, PORTS       ← ne dépend de RIEN
         ↑
-    infrastructure/  adapters concrets (Gemini, Groq, DuckDuckGo, Chroma…)
+    infrastructure/  adapters concrets (Cerebras, Groq, DuckDuckGo, Chroma…)
 
 La règle de dépendance ne pointe que vers l'intérieur : `domain` n'importe
 jamais `infrastructure`. Le câblage se fait dans

@@ -36,8 +36,8 @@ non négociable et prime sur toute considération de performance ou d'élégance
 
 | Besoin | Service retenu | Clé requise | Quota gratuit |
 |---|---|---|---|
-| LLM principal | **Google Gemini** (`gemini-2.0-flash`) | oui, gratuite | ~15 req/min, ~1500/jour |
-| LLM de secours | **Groq** (`llama-3.3-70b-versatile`) | oui, gratuite | ~30 req/min |
+| LLM principal | **Cerebras** (`llama-3.3-70b`) — [ADR 0006](docs/adr/0006-cerebras-remplace-gemini.md), remplace Gemini | oui, gratuite | voir docs fournisseur |
+| LLM de secours | **Groq** (`openai/gpt-oss-20b`) | oui, gratuite | ~30 req/min |
 | Recherche web | **DuckDuckGo** (`ddgs`) | **aucune** | non déclaré |
 | Recherche (repli) | **Tavily** | optionnelle | 1000 req/mois |
 | Tendances | **pytrends** (Google Trends) | **aucune** | non déclaré |
@@ -165,7 +165,7 @@ application/      agents, cas d'usage, prompts ← dépend UNIQUEMENT des ports
       ↓
 domain/           entités, value objects, PORTS ← ne dépend de RIEN
       ↑
-infrastructure/   adapters (Gemini, Groq, DDG, Chroma, Telegram, Git…)
+infrastructure/   adapters (Cerebras, Groq, DDG, Chroma, Telegram, Git…)
 ```
 
 **Règle de dépendance : les flèches ne pointent que vers l'intérieur.**
@@ -345,6 +345,6 @@ Voir `docs/BACKLOG.md` et les issues du dépôt.
 - Chaîne YouTube : https://www.youtube.com/@oussamadallel5
 - LinkedIn : https://www.linkedin.com/in/oussama-dallel-120143209/
 - GitHub : https://github.com/dallel5-git
-- Clé Gemini gratuite : https://aistudio.google.com/apikey
+- Clé Cerebras gratuite : https://cloud.cerebras.ai
 - Clé Groq gratuite : https://console.groq.com/keys
 - Créer un bot Telegram : parler à `@BotFather` sur Telegram

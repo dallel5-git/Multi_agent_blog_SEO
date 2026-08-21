@@ -93,29 +93,29 @@ cp .env.example .env
 nano .env
 ```
 
-Il vous faut **au minimum** une clé Gemini. Comptez 5 minutes, aucune carte
+Il vous faut **au minimum** une clé Cerebras. Comptez 5 minutes, aucune carte
 bancaire n'est demandée nulle part.
 
-### 3.1 Google Gemini — LLM principal (obligatoire)
+### 3.1 Cerebras — LLM principal (obligatoire)
 
-1. Allez sur https://aistudio.google.com/apikey
-2. Connectez-vous avec votre compte Google → **Create API key**
+1. Allez sur https://cloud.cerebras.ai (Platform → API Keys)
+2. Créez un compte gratuit → **Create API key**
 3. Collez la clé dans `.env` :
 
 ```env
-GEMINI_API_KEY=AIza...
-GEMINI_MODEL=gemini-2.0-flash
+CEREBRAS_API_KEY=...
+CEREBRAS_MODEL=llama-3.3-70b
 ```
 
 ### 3.2 Groq — LLM de secours (fortement recommandé)
 
-Si Gemini atteint son quota (HTTP 429), le pipeline bascule automatiquement.
+Si Cerebras atteint son quota (HTTP 429), le pipeline bascule automatiquement.
 
 1. https://console.groq.com/keys → **Create API Key**
 
 ```env
 GROQ_API_KEY=gsk_...
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-20b
 ```
 
 ### 3.3 Telegram — votre télécommande de publication (recommandé)
@@ -304,7 +304,7 @@ src/blogseo/
 │   └── use_cases/           GenerateArticleUseCase
 │
 ├── infrastructure/          ← implémente les ports
-│   ├── llm/                 gemini.py, groq.py, fallback_chain.py, fake.py
+│   ├── llm/                 cerebras.py, groq.py, gemini.py (non câblé), fallback_chain.py, fake.py
 │   ├── search/              duckduckgo.py, tavily.py, composite.py
 │   ├── sources/             hackernews.py, reddit.py, devto.py, rss.py
 │   ├── trends/              pytrends_adapter.py
@@ -344,7 +344,7 @@ Aucun autre fichier à toucher.
 
 | Service | Free tier | Carte bancaire ? |
 |---|---|---|
-| Google Gemini | ~15 req/min, ~1500/jour | ❌ non |
+| Cerebras | free tier généreux (voir docs fournisseur) | ❌ non |
 | Groq | ~30 req/min | ❌ non |
 | DuckDuckGo (`ddgs`) | illimité en pratique | ❌ aucune inscription |
 | Google Trends (`pytrends`) | gratuit | ❌ aucune inscription |
@@ -355,8 +355,8 @@ Aucun autre fichier à toucher.
 | Vercel (blog existant) | Hobby | ❌ non |
 
 **Consommation par run :** 7 à 9 appels LLM en cas nominal (jusqu'à 13 avec deux
-révisions). Un run toutes les 48 h consomme environ **0,6 % du quota Gemini
-gratuit**.
+révisions) — largement sous les quotas gratuits Cerebras/Groq pour un run
+toutes les 48 h.
 
 Aucun SDK ni appel vers un service payant n'est présent dans le code — ni en
 option, ni en commentaire.
@@ -370,7 +370,7 @@ option, ni en commentaire.
 
 **« Aucune clé LLM configurée »**
 → Le pipeline bascule sur le LLM factice et produit un article d'exemple.
-Renseignez `GEMINI_API_KEY` dans `.env`.
+Renseignez `CEREBRAS_API_KEY` dans `.env`.
 
 **« Telegram inactif »**
 → `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` manquants. Sans eux, les articles sont
@@ -393,9 +393,9 @@ juste moins fin. `pip install chromadb` pour le mode complet.
 → Votre blog couvre déjà beaucoup de terrain sur ce thème. Baissez
 `DUPLICATE_THRESHOLD` (0.90 par exemple) ou élargissez les sources de veille.
 
-**Quota Gemini épuisé**
+**Quota Cerebras épuisé**
 → La bascule vers Groq est automatique. Vérifiez dans les logs :
-`[chaîne LLM] gemini a atteint son quota → bascule`.
+`[chaîne LLM] cerebras a atteint son quota → bascule`.
 
 **DuckDuckGo renvoie 0 résultat**
 → Augmentez `SEARCH_DELAY_S` à 4 ou 5, ou ajoutez une clé Tavily.

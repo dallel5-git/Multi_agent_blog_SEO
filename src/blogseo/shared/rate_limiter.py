@@ -1,7 +1,7 @@
 """Rate limiter à fenêtre glissante, indispensable pour rester dans les quotas gratuits.
 
-Gemini free tier plafonne à ~15 requêtes/minute et ~1500/jour selon le modèle ;
-Groq applique ses propres limites. Ce limiteur bloque *avant* l'appel plutôt que
+Cerebras et Groq plafonnent leurs free tiers en requêtes/minute et par jour,
+selon le modèle. Ce limiteur bloque *avant* l'appel plutôt que
 de laisser l'API renvoyer un 429, ce qui évite de brûler le quota journalier en
 erreurs.
 

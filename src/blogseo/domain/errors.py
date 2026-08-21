@@ -20,7 +20,7 @@ class LLMError(BlogSeoError):
 
 
 class QuotaExceededError(LLMError):
-    """Quota gratuit atteint (HTTP 429) : déclenche le fallback Gemini → Groq."""
+    """Quota gratuit atteint (HTTP 429) : déclenche le fallback Cerebras → Groq."""
 
 
 class AllProvidersFailedError(LLMError):
