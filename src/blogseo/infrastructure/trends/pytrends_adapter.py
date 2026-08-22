@@ -7,12 +7,45 @@ dictionnaire vide et le Keyword Analyst travaille sans ce signal.
 
 from __future__ import annotations
 
+import inspect
 import logging
 import time
 
 from ...domain.ports.search import TrendsPort
 
 logger = logging.getLogger(__name__)
+
+
+def _patch_urllib3_method_whitelist() -> None:
+    """Corrige une incompatibilité pytrends/urllib3 (pas un bug de ce projet).
+
+    `pytrends` 4.9.2 (la dernière version publiée) construit encore son
+    `Retry(method_whitelist=...)` avec l'ancien nom de paramètre, renommé
+    `allowed_methods` depuis urllib3 2.0. Sans correctif, tout appel Google
+    Trends échoue avec `TypeError: unexpected keyword argument
+    'method_whitelist'` — dégradation silencieuse (voir résilience §5), mais
+    évitable sans nouvelle dépendance ni version épinglée : on traduit le
+    paramètre à la volée, uniquement si l'installation d'urllib3 en a besoin.
+    """
+    try:
+        from urllib3.util.retry import Retry
+    except ImportError:
+        return
+
+    if getattr(Retry, "_blogseo_patched", False):
+        return
+    if "method_whitelist" in inspect.signature(Retry.__init__).parameters:
+        return  # urllib3 < 2.0 : le paramètre existe déjà, rien à faire
+
+    original_init = Retry.__init__
+
+    def patched_init(self, *args, method_whitelist=None, **kwargs):
+        if method_whitelist is not None:
+            kwargs.setdefault("allowed_methods", method_whitelist)
+        original_init(self, *args, **kwargs)
+
+    Retry.__init__ = patched_init
+    Retry._blogseo_patched = True
 
 
 class PyTrendsAdapter(TrendsPort):
@@ -33,6 +66,7 @@ class PyTrendsAdapter(TrendsPort):
         try:
             from pytrends.request import TrendReq  # type: ignore[import-not-found]
 
+            _patch_urllib3_method_whitelist()
             self._client = TrendReq(hl=self.hl, tz=self.tz, timeout=(10, 25), retries=2, backoff_factor=0.5)
         except ImportError:
             logger.warning("pytrends non installé : le signal Google Trends sera ignoré")

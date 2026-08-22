@@ -134,13 +134,17 @@ class TechnicalReviewerAgent(Agent):
         session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; blogseo-linkcheck/1.0)"})
 
         def probe(url: str) -> tuple[str, bool]:
-            for method in (session.head, session.get):
+            # On compare `method_name`, pas l'objet méthode : une méthode liée
+            # (`session.head`) est recréée à chaque accès et n'est jamais `is`
+            # identique à elle-même d'un accès à l'autre, même pour le même appel.
+            for method_name in ("head", "get"):
+                method = getattr(session, method_name)
                 try:
                     response = method(url, timeout=self.link_timeout_s, allow_redirects=True)
                     if response.status_code < 400:
                         return url, True
                     # Beaucoup de sites refusent HEAD : on retente en GET.
-                    if method is session.head and response.status_code in (403, 405, 501):
+                    if method_name == "head" and response.status_code in (403, 405, 501):
                         continue
                     return url, False
                 except requests.RequestException:
