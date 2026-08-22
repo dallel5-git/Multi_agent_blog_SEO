@@ -6,6 +6,8 @@ en publication ou repart en réécriture.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from blogseo.application.agents.quality_gate import QualityGateAgent
@@ -111,6 +113,18 @@ class TestMotsCles:
         assert not _check(state, "densite_mot_cle").passed
         # Le bourrage seul ne doit pas bloquer la publication.
         assert _check(state, "densite_mot_cle").severity.value == "warning"
+
+    def test_mot_cle_compose_avec_tiret_typographique_est_detecte(self, gate, state):
+        """Cas réel rencontré en production : un LLM écrit parfois un mot-clé composé
+        avec un tiret typographique (U+2011, non-breaking hyphen) plutôt qu'un tiret
+        ASCII — le mot-clé doit rester détecté comme présent malgré cette variation."""
+        state.article.seo = replace(state.article.seo, focus_keyword="usine auto-hébergée")
+        state.article.body_markdown = (
+            state.article.body_markdown
+            + "\n\nCette usine auto‑hébergée tourne entièrement en local."
+        )
+        gate.run(state)
+        assert _check(state, "mot_cle_dans_le_corps").passed
 
 
 class TestIntegrationAvecLesAutresAgents:

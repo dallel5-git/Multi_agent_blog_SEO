@@ -12,7 +12,13 @@ from __future__ import annotations
 import re
 
 from ...domain.value_objects.quality_report import QualityCheck, QualityReport, Severity
-from ...domain.value_objects.seo_metadata import DESCRIPTION_MAX, DESCRIPTION_MIN, TITLE_MAX, TITLE_MIN
+from ...domain.value_objects.seo_metadata import (
+    DESCRIPTION_MAX,
+    DESCRIPTION_MIN,
+    TITLE_MAX,
+    TITLE_MIN,
+    contains_keyword,
+)
 from ...shared.text import strip_code_blocks
 from ..dto.pipeline_state import PipelineState
 from .base import Agent
@@ -200,14 +206,16 @@ class QualityGateAgent(Agent):
                                  "Aucun mot-clé principal n'est défini.")]
 
         density = article.keyword_density(focus)
-        in_body = article.contains(focus)
-        # On tolère la présence des mots du mot-clé séparés (« automatiser » + « n8n »).
-        partial = all(word.lower() in article.body_markdown.lower() for word in focus.split())
+        # `contains_keyword` tolère la présence des mots du mot-clé séparés (« automatiser »
+        # + « n8n ») ET ignore la ponctuation qui les relie (tirets, apostrophes) : un modèle
+        # écrit parfois « auto‑hébergée » avec un tiret typographique (U+2011) plutôt qu'un
+        # tiret ASCII, ce qu'un simple `focus.split()` par espaces ne tolère pas.
+        focus_words = _WORD_PATTERN.findall(focus.lower())
 
         return [
             QualityCheck(
                 name="mot_cle_dans_le_corps",
-                passed=in_body or partial,
+                passed=contains_keyword(article.body_markdown, focus),
                 severity=Severity.BLOCKER,
                 message=f"Le mot-clé principal « {focus} » n'apparaît pas dans le corps de l'article.",
             ),
@@ -221,7 +229,7 @@ class QualityGateAgent(Agent):
             QualityCheck(
                 name="mot_cle_dans_un_titre",
                 passed=any(
-                    any(word.lower() in text.lower() for word in focus.split())
+                    any(word in text.lower() for word in focus_words)
                     for _, text in article.headings
                 ),
                 severity=Severity.WARNING,

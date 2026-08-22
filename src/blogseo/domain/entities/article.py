@@ -80,9 +80,6 @@ class Article:
         occurrences = len(re.findall(re.escape(keyword.lower()), self.body_markdown.lower()))
         return occurrences / self.word_count
 
-    def contains(self, needle: str) -> bool:
-        return needle.lower() in self.body_markdown.lower()
-
     # ------------------------------------------------------------------ #
     # Sérialisation vers le format du blog
     # ------------------------------------------------------------------ #
