@@ -283,3 +283,49 @@ def test_render_prompt_block_ne_change_pas_le_code_si_le_ton_change(tmp_path):
     assert "direct" in bloc_avant
     assert "chaleureux" in bloc_apres
     assert "chaleureux" not in bloc_avant
+
+
+# --------------------------------------------------------------------------- #
+# render_prompt_block() — variante courte (X, TikTok)
+# --------------------------------------------------------------------------- #
+def test_render_prompt_block_short_est_nettement_plus_court(tmp_path):
+    fichier = _write_yaml(tmp_path, _kernel_data())
+    kernel = load_brand_kernel(path=fichier)
+
+    bloc_complet = render_prompt_block(kernel, Platform.X)
+    bloc_court = render_prompt_block(kernel, Platform.X, short=True)
+
+    assert len(bloc_court) < len(bloc_complet)
+
+
+def test_render_prompt_block_short_garde_le_ton_les_interdits_et_le_niveau(tmp_path):
+    fichier = _write_yaml(tmp_path, _kernel_data())
+    kernel = load_brand_kernel(path=fichier)
+
+    bloc = render_prompt_block(kernel, Platform.TIKTOK, short=True)
+
+    assert "direct" in bloc
+    assert "promesses de revenus chiffrées" in bloc
+    assert "débutant" in bloc  # niveau technique de TikTok
+
+
+def test_render_prompt_block_short_omet_la_baseline_et_les_details_visuels(tmp_path):
+    fichier = _write_yaml(tmp_path, _kernel_data())
+    kernel = load_brand_kernel(path=fichier)
+
+    bloc = render_prompt_block(kernel, Platform.X, short=True)
+
+    assert "Baseline" not in bloc
+    assert kernel.identity.baseline not in bloc
+    assert kernel.visual.colors.primary not in bloc
+
+
+def test_render_prompt_block_short_ninclut_que_les_offres_actives(tmp_path):
+    fichier = _write_yaml(tmp_path, _kernel_data())
+    kernel = load_brand_kernel(path=fichier)
+
+    bloc = render_prompt_block(kernel, Platform.X, short=True)
+
+    assert "n8n" in bloc
+    assert "ref=od-x" in bloc
+    assert "Make" not in bloc

@@ -228,12 +228,49 @@ def load_brand_kernel(path: Path | None = None) -> BrandKernel:
     return _load_cached(_resolve_path(path))
 
 
-def render_prompt_block(kernel: BrandKernel, platform: Platform) -> str:
+def render_prompt_block(kernel: BrandKernel, platform: Platform, *, short: bool = False) -> str:
     """Bloc de texte injecté en tête du prompt système du rédacteur de `platform`.
 
     Ne lit que `kernel` : changer une valeur du Brand Kernel change ce bloc
     pour les six plateformes, sans toucher au code des rédacteurs.
+
+    `short=True` produit une variante condensée (ton, interdits, niveau
+    technique, offres actives — sans baseline ni détails visuels), pour les
+    plateformes à format bref (X, TikTok) : c'est au pipeline de la
+    plateforme de décider s'il en a besoin, le Brand Kernel ne présume pas
+    du format de chaque plateforme (Lot 3, décision 9 de CADRAGE.md).
     """
+    if short:
+        return _render_short_block(kernel, platform)
+    return _render_full_block(kernel, platform)
+
+
+def _offer_lines(kernel: BrandKernel, platform: Platform) -> list[str]:
+    return [
+        f"- {offre.name} → {offre.call_to_action} "
+        f"({kernel.tracking.apply(offre.url, platform) if offre.url else '(lien absent)'})"
+        for offre in kernel.active_offers
+    ]
+
+
+def _render_short_block(kernel: BrandKernel, platform: Platform) -> str:
+    voice = kernel.voice
+    niveau_technique = kernel.audience.technical_level_by_platform[platform]
+
+    lignes = [
+        f"=== BRAND KERNEL (court) — {kernel.identity.name} ({platform.label}) ===",
+        f"Ton : {', '.join(voice.tone)} · adresse {voice.address} · emoji {voice.emoji_policy}",
+        f"Interdits : {', '.join(voice.forbidden)}",
+        f"Niveau technique visé : {niveau_technique}",
+    ]
+
+    lignes_offres = _offer_lines(kernel, platform)
+    lignes.append("Offres actives : " + ("; ".join(lignes_offres) if lignes_offres else "aucune"))
+
+    return "\n".join(lignes)
+
+
+def _render_full_block(kernel: BrandKernel, platform: Platform) -> str:
     identity = kernel.identity
     voice = kernel.voice
     visual = kernel.visual
@@ -262,12 +299,10 @@ def render_prompt_block(kernel: BrandKernel, platform: Platform) -> str:
         f"Style des visuels : {visual.thumbnail_style}",
     ]
 
-    offres_actives = kernel.active_offers
-    if offres_actives:
+    lignes_offres = _offer_lines(kernel, platform)
+    if lignes_offres:
         lignes.append("")
         lignes.append("Offres à mentionner si pertinent :")
-        for offre in offres_actives:
-            lien = kernel.tracking.apply(offre.url, platform) if offre.url else "(lien absent)"
-            lignes.append(f"- {offre.name} → {offre.call_to_action} ({lien})")
+        lignes.extend(lignes_offres)
 
     return "\n".join(lignes)
