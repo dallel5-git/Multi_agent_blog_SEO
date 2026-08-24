@@ -1,0 +1,150 @@
+# =============================================================================
+#  BRAND KERNEL — identité de marque partagée par TOUS les pipelines
+# =============================================================================
+#
+#  C'est la SEULE chose obligatoirement commune aux 6 plateformes. Chaque
+#  rédacteur charge ce fichier avant de générer quoi que ce soit, afin que
+#  YouTube, TikTok, Instagram, X, Facebook et le canal Telegram parlent de la
+#  même voix — même quand ils traitent des sujets totalement différents.
+#
+#  ⚠️  Les valeurs marquées `TODO` n'ont pas été décidées. `load_brand_kernel()`
+#      doit REFUSER de démarrer tant qu'il en reste une : mieux vaut planter au
+#      lancement que publier un visuel aux mauvaises couleurs sur six comptes.
+#      La liste complète des TODO est reprise dans `CADRAGE.md`.
+#
+#  Ce fichier ne contient JAMAIS de clé d'API : celles-ci vivent dans `.env`.
+# =============================================================================
+
+version: 1
+
+# -----------------------------------------------------------------------------
+# 1. IDENTITÉ
+# -----------------------------------------------------------------------------
+identity:
+  name: "Oussama Dallel"
+  # Fourni par l'auteur.
+  slogan: "Prenez le contrôle de votre temps grâce à l'IA"
+  baseline: "Tutoriels concrets sur l'IA et l'automatisation (n8n, Make) pour reprendre le contrôle de ton temps."
+  language: "fr"
+  # Comptes officiels, pour les mentions croisées et les cartes de fin.
+  handles:
+    youtube: "https://www.youtube.com/@oussamadallel5"
+    linkedin: "https://www.linkedin.com/in/oussama-dallel-120143209/"
+    github: "https://github.com/dallel5-git"
+    blog: "https://oussama-ai-blog-v1.vercel.app"
+    instagram: "https://www.instagram.com/oussamadallel/"
+    tiktok: "https://www.tiktok.com/@oussama_dallel"
+    x: "https://x.com/DallelOussama1"
+    facebook: "https://www.facebook.com/profile.php?id=61593782483710"
+    telegram_channel: null   # canal existant d'après l'auteur — URL à confirmer
+
+# -----------------------------------------------------------------------------
+# 2. TON DE VOIX
+#    Injecté en tête du prompt système de chaque rédacteur.
+# -----------------------------------------------------------------------------
+voice:
+  tone: ["direct", "pragmatique", "inspirant", "accessible"]
+  address: "tu"              # "vous" | "tu" — figé pour les six plateformes
+  # Ce que la marque ne fait jamais. Le pipeline blog applique déjà des règles
+  # de ce type ; les reprendre ici garantit la cohérence sur les 6 plateformes.
+  forbidden:
+    - "promesses de revenus chiffrées"
+    - "superlatifs creux (révolutionnaire, incroyable, ultime)"
+    - "anglicismes quand un mot français existe"
+  signature_phrases: ["Passe à l'action, pas seulement à la lecture."]
+  emoji_policy: "parcimonieux"  # "aucun" | "parcimonieux" | "libre" — peut varier par plateforme
+
+# -----------------------------------------------------------------------------
+# 3. IDENTITÉ VISUELLE
+#    Utilisée pour les miniatures, les couvertures et les visuels générés.
+# -----------------------------------------------------------------------------
+visual:
+  # Dérivées des bannières Facebook/YouTube et du blog (oussama-ai-blog-v1) :
+  # dégradé violet/indigo sur fond sombre, texte clair, accent cyan.
+  colors:
+    primary: "#9333EA"      # violet vif — boutons, CTA
+    secondary: "#2E1065"    # indigo profond — dégradés, fonds de cartes
+    accent: "#22D3EE"       # cyan — badges, highlights
+    background: "#0B0712"   # quasi noir — fond par défaut (généralement sombre)
+    text: "#F5F3FF"         # blanc légèrement lavande
+  logo:
+    # Pas de fichier logo dédié pour l'instant : wordmark texte en attendant.
+    path: "assets/brand/logo-wordmark.svg"
+    safe_zone_ratio: 0.1
+  fonts:
+    heading: "Poppins"
+    body: "Inter"
+  # Généralement sombre (dégradé violet/indigo, texte clair, accent cyan) —
+  # fond clair accepté ponctuellement si la lisibilité du format l'exige.
+  thumbnail_style: >-
+    Dégradé violet à indigo sur fond sombre, titre blanc en gras (Poppins),
+    touches cyan en accent ; variante fond clair possible ponctuellement pour
+    la lisibilité, cohérent avec le blog et les bannières YouTube/Facebook.
+
+# -----------------------------------------------------------------------------
+# 4. AUDIENCE
+#    Reprise de la ligne éditoriale du blog (MEMOIRE.md §1).
+# -----------------------------------------------------------------------------
+audience:
+  country: "Tunisie"
+  segments:
+    - "étudiants"
+    - "PME et petits business"
+    - "professionnels IT"
+    - "développeurs"
+  # Niveau technique par plateforme, pas une valeur unique : l'audience réelle
+  # diffère d'un réseau à l'autre (TikTok/Instagram grand public, X/YouTube
+  # plus technique...). Chaque rédacteur ne lit que la ligne de sa plateforme.
+  technical_level_by_platform:
+    # Choisi selon l'audience réelle de chaque plateforme dans la niche IA/
+    # automatisation (délégué par l'auteur, voir CADRAGE.md décision 9's memo).
+    youtube: "mixte"          # tutoriels : du débutant curieux au dev qui creuse
+    tiktok: "débutant"        # format court, grand public, découverte
+    instagram: "débutant"     # visuel, grand public, découverte
+    x: "intermédiaire"        # communauté tech/IA/indie-hackers plus avertie
+    facebook: "débutant"      # PME et grand public tunisien, moins tech
+    telegram_channel: "intermédiaire"  # abonnés déjà engagés (YouTube/blog)
+  pain_points:
+    - "manque de temps"
+    - "peur de la complexité technique"
+    - "budget limité pour des outils no-code payants"
+    - "envie de résultats concrets rapidement"
+  currency: "TND"
+
+# -----------------------------------------------------------------------------
+# 5. OFFRES D'AFFILIATION ACTIVES
+#    Seules les offres `active: true` peuvent être citées par un rédacteur.
+#    Désactiver une offre ici la retire des 6 plateformes d'un coup.
+# -----------------------------------------------------------------------------
+offers:
+  - id: "n8n"
+    name: "n8n"
+    url: null                # programme pas encore souscrit
+    active: false
+    commission: null
+    call_to_action: null
+  - id: "make"
+    name: "Make"
+    # Lien d'affiliation réel (programme Make, eu1.make.com/user/affiliate).
+    url: "https://www.make.com/en/register?pc=oussama"
+    active: true
+    commission: null         # modèle non affiché sur le tableau de bord Make
+    call_to_action: "Automatise tes process avec Make"
+  # Produits digitaux propres (suivis dans l'onglet Conversions du dashboard).
+  - id: "produit-digital-1"
+    name: null                # aucun produit propre pour l'instant
+    url: null
+    active: false
+    commission: null        # produit propre : pas de commission, une marge
+    call_to_action: null
+
+# -----------------------------------------------------------------------------
+# 6. SUIVI DES LIENS SORTANTS
+#    Paramètre de requête ajouté à tout lien sortant (offres, blog, mentions
+#    croisées) pour ventiler les clics par plateforme dans l'onglet Conversions
+#    du dashboard. `{platform}` est remplacé par la valeur de l'énum Platform
+#    (ex. "youtube" → "od-youtube").
+# -----------------------------------------------------------------------------
+tracking:
+  param: "ref"
+  scheme: "od-{platform}"

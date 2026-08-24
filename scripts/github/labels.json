@@ -68,5 +68,40 @@
     "name": "v2.0",
     "color": "0e4c92",
     "description": "Prevu en v2.0 - diffusion"
+  },
+  {
+    "name": "pipeline",
+    "color": "0e8a16",
+    "description": "Pipeline de contenu d'une plateforme"
+  },
+  {
+    "name": "bot",
+    "color": "b60205",
+    "description": "Bot Telegram de pilotage"
+  },
+  {
+    "name": "dashboard",
+    "color": "d4c5f9",
+    "description": "Tableau de bord Streamlit"
+  },
+  {
+    "name": "brand-kernel",
+    "color": "5319e7",
+    "description": "Identite de marque partagee"
+  },
+  {
+    "name": "stats",
+    "color": "006b75",
+    "description": "Collecte et affichage des statistiques"
+  },
+  {
+    "name": "bonne-premiere-issue",
+    "color": "7057ff",
+    "description": "Bon point de depart pour reprendre le projet"
+  },
+  {
+    "name": "pilotage",
+    "color": "0052cc",
+    "description": "Extension multi-plateformes"
   }
 ]

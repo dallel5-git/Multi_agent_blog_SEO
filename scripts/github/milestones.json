@@ -10,5 +10,37 @@
   {
     "title": "v2.0 — Diffusion",
     "description": "Réseaux sociaux, séries d'articles, régénération des articles sous-performants."
+  },
+  {
+    "title": "Lot 0 — Cadrage & squelette",
+    "description": "Analyse de l'existant, architecture, squelette de code, documents de cadrage. Livré."
+  },
+  {
+    "title": "Lot 1 — Brand Kernel",
+    "description": "L'identité de marque partagée par les 6 pipelines. Bloque tout le reste."
+  },
+  {
+    "title": "Lot 2 — Base de données partagée",
+    "description": "SQLite : content_items, platform_posts, stat_snapshots, et le pont depuis le blog."
+  },
+  {
+    "title": "Lot 3 — Pipelines de contenu ×6",
+    "description": "Six pipelines indépendants : YouTube, TikTok, Instagram, X, Facebook, canal Telegram."
+  },
+  {
+    "title": "Lot 4 — Bots Telegram ×6",
+    "description": "Six bots de pilotage privés : validation par boutons, /stats, /en_attente, /publie."
+  },
+  {
+    "title": "Lot 5 — Agent Collecteur de Stats",
+    "description": "YouTube, Meta et Telegram en automatique ; X et TikTok en saisie manuelle guidée."
+  },
+  {
+    "title": "Lot 6 — Dashboard",
+    "description": "Application Streamlit locale : Kanban, statistiques dans le temps, conversions."
+  },
+  {
+    "title": "Lot 7 — Tests bout-en-bout",
+    "description": "Un run complet hors ligne, du sujet au brouillon enregistré en base."
   }
 ]

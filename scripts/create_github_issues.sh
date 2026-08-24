@@ -165,7 +165,10 @@ for i, issue in enumerate(data):
         str(body_file),
         "close" if issue.get("close") else "open",
     ]))
-(tmp / "index.tsv").write_text("\n".join(index), encoding="utf-8")
+# Saut de ligne final indispensable : `while read` en bash n'exécute pas le
+# corps de boucle pour une dernière ligne non terminée par "\n" — la dernière
+# issue du backlog était silencieusement ignorée.
+(tmp / "index.tsv").write_text("\n".join(index) + "\n", encoding="utf-8")
 PYEOF
 
 created=0; skipped=0; closed=0; failed=0; streak=0

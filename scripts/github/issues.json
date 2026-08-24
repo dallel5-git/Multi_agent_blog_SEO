@@ -446,5 +446,447 @@
     "milestone": "v2.0 — Diffusion",
     "body": "> **Epic :** EPIC 8 — Évolutions\n> **Estimation :** 5 points\n\n## Contexte\n\nUn article avec beaucoup d'impressions et peu de clics a un problème de titre ou de description, pas de fond.\n\n## Tâches\n\n- [ ] Détection via `PerformanceFeedback.underperforming_slugs`\n- [ ] Mode `blogseo refresh <slug>` : réécriture ciblée du titre et de la description\n- [ ] Validation Telegram avant modification, comme pour un nouvel article\n\n## Critères d'acceptation\n\n- L'article existant n'est jamais modifié sans validation humaine\n- Le fichier est mis à jour sur place, sans changement de slug\n\n---\n\n_Issue générée depuis `docs/BACKLOG.md` par `scripts/create_github_issues.sh`._",
     "close": false
+  },
+  {
+    "title": "[EPIC] Lot 0 — Cadrage & squelette multi-plateformes",
+    "labels": [
+      "epic",
+      "pilotage",
+      "docs"
+    ],
+    "milestone": "Lot 0 — Cadrage & squelette",
+    "body": "> **Lot :** Lot 0 — Cadrage\n> **Estimation :** 5 points\n\n## Contexte\n\nPréparer l'extension du projet vers un système de pilotage multi-plateformes\n**sans coder de fonctionnalité** : comprendre l'existant, proposer une\narchitecture qui s'y intègre, poser le squelette et planifier le travail.\n\n## Tâches\n\n- [x] Analyser le repo existant (structure, agents, conventions, stack)\n- [x] Proposer une architecture modulaire qui n'altère pas le code du blog\n- [x] Créer `ARCHITECTURE.md` avec les schémas Mermaid\n- [x] Créer le squelette `src/pilotage/` (63 fichiers, docstrings uniquement)\n- [x] Créer `brand_kernel.yaml` avec des placeholders explicites\n- [x] Créer `shared_calendar/schema.sql` (3 tables + 1 vue)\n- [x] Étendre `.env.example` (sections 11 à 14)\n- [x] Créer `CADRAGE.md` : lots, risques, décisions à figer\n- [x] Ajouter `tests/unit/test_pilotage_scaffolding.py`\n\n## Critères d'acceptation\n\n- `src/blogseo/` n'a pas été modifié d'une seule ligne\n- `pilotage` n'importe jamais `blogseo`, et réciproquement\n- Aucune logique métier : ni appel LLM, ni appel réseau, ni requête SQL hors schéma\n- `pytest tests/unit/test_pilotage_scaffolding.py` passe (57 tests)\n- `ruff check src/pilotage` ne signale rien\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": true
+  },
+  {
+    "title": "[EPIC] Lot 1 — Brand Kernel",
+    "labels": [
+      "epic",
+      "brand-kernel",
+      "pilotage"
+    ],
+    "milestone": "Lot 1 — Brand Kernel",
+    "body": "> **Lot :** Lot 1 — Brand Kernel\n> **Estimation :** 8 points\n\n## Contexte\n\nLe Brand Kernel est la **seule** chose obligatoirement partagée par les six\npipelines : couleurs, logo, police, ton de voix, slogan, cible et offres\nd'affiliation actives. Tous les rédacteurs le chargent avant de générer quoi\nque ce soit, quelle que soit la plateforme.\n\nC'est le premier lot parce que tout le reste en dépend.\n\n⚠️ **Bloqué par des décisions de l'auteur** : les décisions 1 à 6 de la\nchecklist de `CADRAGE.md` (identité visuelle, ton de voix, baseline, handles,\noffres d'affiliation, paramètre de suivi des liens).\n\n## Tâches\n\n- [ ] Renseigner les valeurs `TODO` de `brand_kernel.yaml`\n- [ ] Définir les dataclasses miroir dans `brand_kernel/schema.py`\n- [ ] Implémenter `load_brand_kernel()` avec cache et validation stricte\n- [ ] Implémenter `render_prompt_block()` pour l'injection dans les prompts\n\n## Critères d'acceptation\n\n- Changer le ton de voix à un seul endroit change les six plateformes\n- Le chargement échoue explicitement s'il reste un `TODO`\n- Aucune valeur d'identité n'est écrite en dur dans le code Python\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le fichier brand_kernel.yaml et la fonction de chargement",
+    "labels": [
+      "brand-kernel",
+      "pilotage",
+      "bonne-premiere-issue"
+    ],
+    "milestone": "Lot 1 — Brand Kernel",
+    "body": "> **Lot :** Lot 1 — Brand Kernel\n> **Estimation :** 3 points\n\n## Contexte\n\n`src/pilotage/brand_kernel/brand_kernel.yaml` existe déjà avec sa structure\ncomplète, mais ses valeurs d'identité sont des `TODO` : le cadrage n'a pas\ninventé l'identité de marque à la place de l'auteur.\n\nIl reste à les renseigner et à écrire la fonction de chargement.\n\n## Tâches\n\n- [ ] Remplir les `TODO` : couleurs (5 codes hex), logo, polices, ton, baseline, handles\n- [ ] Implémenter `load_brand_kernel(path=None) -> BrandKernel` avec `yaml.safe_load`\n- [ ] Chemin par défaut dans le paquet, surchargeable par `BRAND_KERNEL_PATH`\n- [ ] Mettre le résultat en cache (`functools.lru_cache`) : une lecture par process\n- [ ] Lever une erreur explicite s'il reste un `TODO` ou si une section manque\n- [ ] Supprimer `test_les_valeurs_non_decidees_restent_des_todo_explicites`, devenu caduc\n\n## Critères d'acceptation\n\n- Un YAML incomplet fait échouer le démarrage, jamais la publication\n- `BRAND_KERNEL_PATH` permet de charger un kernel de test\n- Le fichier est lu une seule fois, même avec six pipelines actifs\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Définir les dataclasses du Brand Kernel",
+    "labels": [
+      "brand-kernel",
+      "domain",
+      "pilotage"
+    ],
+    "milestone": "Lot 1 — Brand Kernel",
+    "body": "> **Lot :** Lot 1 — Brand Kernel\n> **Estimation :** 2 points\n\n## Contexte\n\nMiroir typé du YAML, dans `brand_kernel/schema.py` : `Identity`, `Voice`,\n`Visual`, `Audience`, `Offer` et l'agrégat `BrandKernel`.\n\nConvention du projet : `frozen=True, slots=True`. ⚠️ Avec `slots=True`, une\nvaleur par défaut n'est **pas** lisible via la classe — c'est le piège n°1 de\n`MEMOIRE.md`.\n\n## Tâches\n\n- [ ] Créer les six dataclasses gelées\n- [ ] Aucune valeur d'identité par défaut : tout vient du YAML\n- [ ] Ajouter `active_offers()` qui ne renvoie que les offres `active: true`\n\n## Critères d'acceptation\n\n- Une offre désactivée dans le YAML disparaît des six plateformes d'un coup\n- Le type est vérifiable statiquement (aucun `dict` nu qui traverse le code)\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Générer le bloc de prompt à partir du Brand Kernel",
+    "labels": [
+      "brand-kernel",
+      "pilotage"
+    ],
+    "milestone": "Lot 1 — Brand Kernel",
+    "body": "> **Lot :** Lot 1 — Brand Kernel\n> **Estimation :** 3 points\n\n## Contexte\n\n`render_prompt_block(kernel) -> str` produit le texte injecté en tête du prompt\nsystème de chaque rédacteur. C'est ce qui fait que six plateformes traitant six\nsujets différents parlent quand même de la même voix.\n\nS'inspirer de `src/blogseo/application/prompts/editorial.py`, qui joue déjà ce\nrôle pour le blog — **s'en inspirer, pas l'importer** : la règle d'isolation\ninterdit à `pilotage` d'importer `blogseo`.\n\n## Tâches\n\n- [ ] Rendre ton, adresse (tu/vous), interdits et formules signature\n- [ ] Rendre les offres actives avec leur appel à l'action\n- [ ] Prévoir une variante courte pour les plateformes à format bref (X, TikTok)\n\n## Critères d'acceptation\n\n- Le bloc tient en moins de 400 tokens (les LLM gratuits ont un contexte limité)\n- Une offre inactive n'apparaît jamais dans le bloc\n- Test : deux plateformes différentes reçoivent le même bloc de voix\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le fichier brand_kernel.yaml et la fonction de chargement**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer un ADR 0009 sur l'exécution hybride Actions / local",
+    "labels": [
+      "docs",
+      "infra",
+      "pilotage"
+    ],
+    "milestone": "Lot 1 — Brand Kernel",
+    "body": "> **Lot :** Lot 1 — Brand Kernel\n> **Estimation :** 1 points\n\n## Contexte\n\nL'ADR 0005 a rejeté GitHub Actions pour le blog, parce que le bouton ❌ doit\nécrire sur le disque de l'auteur. Le pilotage retient une exécution **hybride**\n(veille et rédaction sur Actions, bots et base en local), ce qui nuance cette\ndécision sans la contredire.\n\nIl faut l'écrire, sinon la prochaine session relira l'ADR 0005 et repartira sur\ndu tout-local.\n\n## Tâches\n\n- [ ] Rédiger `docs/adr/0009-execution-hybride-pilotage.md`\n- [ ] Expliquer pourquoi l'argument de l'ADR 0005 ne vaut que pour le blog\n- [ ] Documenter les trois options de transport Actions → local (risque n°1 du cadrage)\n- [ ] Acter le repli sûr : tout en local tant que le transport n'est pas tranché\n\n## Critères d'acceptation\n\n- L'ADR 0005 est cité et explicitement nuancé, pas contredit en silence\n- Le tableau des trois options figure dans l'ADR\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "[EPIC] Lot 2 — Base de données partagée",
+    "labels": [
+      "epic",
+      "infra",
+      "pilotage"
+    ],
+    "milestone": "Lot 2 — Base de données partagée",
+    "body": "> **Lot :** Lot 2 — Base partagée\n> **Estimation :** 8 points\n\n## Contexte\n\nLe calendrier partagé : une base SQLite unique (aucun serveur, aucun compte,\ndonc gratuite) que chaque pipeline **peut** consulter pour suggérer une mention\ncroisée vers un contenu publié ailleurs.\n\nCe module ne crée **aucune** dépendance éditoriale entre les plateformes :\nconsulter est facultatif, et toute suggestion passe par la validation manuelle\ndu bot avant d'exister.\n\n## Tâches\n\n- [ ] Appliquer `schema.sql` via `migrate.py`\n- [ ] Définir les entités Python et l'énum `ContentStatus`\n- [ ] Implémenter `CalendarRepository` (tout le SQL au même endroit)\n- [ ] Implémenter `PilotageSettings.from_env()`\n- [ ] Créer le pont lecture seule blog → `content_items`\n\n## Critères d'acceptation\n\n- `PRAGMA foreign_keys = ON` à chaque connexion (SQLite ne l'active pas seul)\n- Aucune requête SQL hors de `repository.py`\n- Le chemin de la base vient de la configuration, jamais d'une constante\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le fichier brand_kernel.yaml et la fonction de chargement**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le schéma SQLite et le script de migration",
+    "labels": [
+      "infra",
+      "pilotage",
+      "bonne-premiere-issue"
+    ],
+    "milestone": "Lot 2 — Base de données partagée",
+    "body": "> **Lot :** Lot 2 — Base partagée\n> **Estimation :** 2 points\n\n## Contexte\n\n`src/pilotage/shared_calendar/schema.sql` existe déjà et est testé\n(`tests/unit/test_pilotage_scaffolding.py`) : 3 tables, 1 vue, contraintes\n`CHECK` synchronisées avec l'énum `Platform`, clés étrangères en cascade.\n\nIl reste à écrire le code qui l'applique.\n\n## Tâches\n\n- [ ] Implémenter `apply_schema(db_path)` avec `executescript()`\n- [ ] Créer le dossier parent de la base s'il n'existe pas\n- [ ] Ajouter une commande `pilotage migrate` en CLI\n- [ ] Vérifier que rejouer la migration ne casse rien\n\n## Critères d'acceptation\n\n- La migration est idempotente (déjà couvert par `test_le_schema_est_rejouable`)\n- `PRAGMA foreign_keys = ON` est appliqué à chaque connexion, pas seulement à la migration\n- Le chemin par défaut est `storage/pilotage/calendar.db`\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Définir les entités du calendrier et l'énum ContentStatus",
+    "labels": [
+      "domain",
+      "pilotage"
+    ],
+    "milestone": "Lot 2 — Base de données partagée",
+    "body": "> **Lot :** Lot 2 — Base partagée\n> **Estimation :** 2 points\n\n## Contexte\n\n`ContentItem`, `PlatformPost`, `StatSnapshot` en dataclasses gelées, plus\nl'énum d'état.\n\nLes sept états — `idea`, `drafted`, `pending_review`, `approved`, `published`,\n`rejected`, `archived` — sont exactement les colonnes du Kanban du tableau de\nbord, et exactement les valeurs de la contrainte `CHECK` du schéma. Les trois\ndoivent rester synchronisés.\n\n## Tâches\n\n- [ ] Créer les trois dataclasses en miroir des tables\n- [ ] Créer `ContentStatus(str, Enum)` — jamais `StrEnum`, voir la note UP042 de pyproject\n- [ ] Ajouter un test de synchronisation énum ↔ contrainte CHECK, sur le modèle de `test_le_schema_accepte_toutes_les_valeurs_de_lenum`\n\n## Critères d'acceptation\n\n- Ajouter un état oblige à toucher le schéma SQL : le test le rappelle\n- Les valeurs sont sérialisables telles quelles en base et en `callback_data`\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le schéma SQLite et le script de migration**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le repository du calendrier partagé",
+    "labels": [
+      "infra",
+      "pilotage"
+    ],
+    "milestone": "Lot 2 — Base de données partagée",
+    "body": "> **Lot :** Lot 2 — Base partagée\n> **Estimation :** 5 points\n\n## Contexte\n\n`CalendarRepository`, seul endroit du projet où du SQL est écrit. `sqlite3` de\nla bibliothèque standard — aucun ORM à installer.\n\n## Tâches\n\n- [ ] `add_item` / `update_status` / `list_by_platform` / `list_pending`\n- [ ] `add_post` / `list_recent_posts`\n- [ ] `add_snapshot` / `latest_snapshot`\n- [ ] `suggest_cross_reference(item_id)` : propose un contenu publié ailleurs, sans rien imposer\n- [ ] Activer les clés étrangères à chaque connexion\n\n## Critères d'acceptation\n\n- Aucune chaîne SQL ailleurs que dans ce fichier\n- `suggest_cross_reference` écrit `cross_ref_state = 'suggested'`, jamais `'accepted'` — seul l'auteur accepte, via le bot\n- Tests sur base en mémoire, sans fichier temporaire\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le schéma SQLite et le script de migration**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Implémenter PilotageSettings.from_env()",
+    "labels": [
+      "infra",
+      "pilotage"
+    ],
+    "milestone": "Lot 2 — Base de données partagée",
+    "body": "> **Lot :** Lot 2 — Base partagée\n> **Estimation :** 3 points\n\n## Contexte\n\nConfiguration du pilotage, sur le modèle exact de\n`blogseo.infrastructure.config.settings` — mais dans un module séparé, la règle\nd'isolation interdisant l'import.\n\nLes variables sont déjà documentées dans `.env.example`, sections 11 à 14.\n\n## Tâches\n\n- [ ] Sections `bots` (6 tokens + 6 chat_id), `calendar`, `youtube`, `meta`, `dashboard`\n- [ ] Implémenter `describe()` qui affiche « configurée / absente », jamais la valeur\n- [ ] Ajouter une commande `pilotage check` sur le modèle de `blogseo check`\n\n## Critères d'acceptation\n\n- RÈGLE ABSOLUE : aucune clé en dur, jamais\n- `describe()` ne divulgue aucun secret, même partiellement\n- Un token manquant désactive proprement le bot concerné, sans faire échouer les cinq autres\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le pont lecture seule blog → calendrier partagé",
+    "labels": [
+      "infra",
+      "pilotage"
+    ],
+    "milestone": "Lot 2 — Base de données partagée",
+    "body": "> **Lot :** Lot 2 — Base partagée\n> **Estimation :** 3 points\n\n## Contexte\n\nLe blog compte comme septième entrée du calendrier : les articles publiés\nalimentent `content_items` avec `platform = 'blog'`, afin que les six pipelines\npuissent proposer une mention croisée vers un article.\n\n⚠️ **Sans modifier `src/blogseo/` ni importer le paquet.** Le pont lit les\n`.mdx` du dossier `content/articles/` du blog Next.js et les runs persistés\ndans `storage/runs/` — exactement comme le ferait un outil externe.\n\n## Tâches\n\n- [ ] Lire les `.mdx` publiés et leur frontmatter\n- [ ] Insérer/mettre à jour les lignes `platform = 'blog'`, `status = 'published'`\n- [ ] Rendre l'opération idempotente (relancer ne duplique pas)\n- [ ] Brancher le pont sur la migration ou sur une commande dédiée\n\n## Critères d'acceptation\n\n- `grep -rn \"import pilotage\" src/blogseo/` ne renvoie rien — vérifié par `test_blogseo_nimporte_jamais_pilotage`\n- `grep -rn \"import blogseo\" src/pilotage/` ne renvoie rien non plus\n- Un article ajouté à la main dans le blog remonte au run suivant\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le repository du calendrier partagé**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "[EPIC] Lot 3 — Les 6 pipelines de contenu",
+    "labels": [
+      "epic",
+      "pipeline",
+      "pilotage"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 21 points\n\n## Contexte\n\nSix pipelines **strictement indépendants** : chacun a sa veille, choisit ses\nsujets et suit son calendrier. Rien n'impose que deux plateformes traitent le\nmême sujet le même jour — c'est un choix éditorial assumé.\n\n⚠️ **Erreur d'architecture à ne pas commettre** : un « orchestrateur global »\nqui distribuerait les sujets aux six plateformes. L'indépendance est la règle,\npas une limitation à contourner.\n\n**Méthode recommandée** : implémenter **un** pipeline de bout en bout (YouTube,\nqui a des statistiques automatiques et donc la meilleure boucle de\nrétroaction), le valider en conditions réelles, puis dupliquer.\n\n## Tâches\n\n- [ ] Définir le contrat commun `PlatformPipeline`\n- [ ] Implémenter le pipeline YouTube comme pilote\n- [ ] Dupliquer sur TikTok, Instagram, X, Facebook et le canal Telegram\n\n## Critères d'acceptation\n\n- Aucun pipeline n'en importe un autre\n- Le Brand Kernel est chargé par chaque rédacteur avant génération\n- Une source de veille morte dégrade le run, ne le fait jamais échouer\n- La consultation du calendrier partagé reste facultative\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le fichier brand_kernel.yaml et la fonction de chargement**\n- ⛔ bloquée par : **Créer le repository du calendrier partagé**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le contrat commun PlatformPipeline",
+    "labels": [
+      "pipeline",
+      "domain",
+      "pilotage"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 3 points\n\n## Contexte\n\nClasse de base abstraite, dans l'esprit de\n`blogseo.application.agents.base.Agent` : chronométrage, trace, et distinction\nentre étape critique et étape dégradable.\n\n    class PlatformPipeline(ABC):\n        platform: Platform\n        def watch(self) -> list[TrendItem]: ...\n        def choose_topic(self, trends) -> Topic: ...\n        def write(self, topic) -> Draft: ...\n        def submit(self, draft) -> None: ...\n\n## Tâches\n\n- [ ] Définir les quatre méthodes abstraites\n- [ ] Envelopper l'exécution : trace, durée, gestion d'erreur\n- [ ] Marquer `watch()` comme non critique (une veille morte ne bloque pas)\n- [ ] Charger le Brand Kernel dans `write()`, jamais ailleurs\n\n## Critères d'acceptation\n\n- Ajouter un pipeline = créer une sous-classe, rien d'autre à modifier\n- Un pipeline ne connaît jamais l'existence d'un autre\n- Une exception dans `watch()` est journalisée puis avalée\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le fichier brand_kernel.yaml et la fonction de chargement**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le pipeline de contenu YouTube",
+    "labels": [
+      "pipeline",
+      "pilotage",
+      "bonne-premiere-issue"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 5 points\n\n## Contexte\n\nPipeline de contenu YouTube, indépendant des cinq autres : veille propre,\nchoix de sujet propre, cadence propre.\n\nStatistiques de cette plateforme : **Data API v3 (automatique)**.\n\nSquelette existant : `src/pilotage/pipelines/youtube/`\n(`watcher.py`, `writer.py`, `spec.py`).\n\n⚠️ **C'est le pipeline pilote.** Il valide le modèle avant duplication sur les\ncinq autres — il a donc vocation à être plus soigné, et à révéler les manques\nde `PlatformPipeline`.\n\n## Tâches\n\n- [ ] Implémenter `watcher.py` : sources de veille propres à YouTube\n- [ ] Implémenter `writer.py` : format attendu par YouTube, Brand Kernel injecté\n- [ ] Implémenter `spec.py` : cadence et fenêtre horaire\n- [ ] Enregistrer les brouillons en base avec `status = 'drafted'`\n- [ ] Consulter le calendrier pour une éventuelle mention croisée (facultatif)\n\n## Critères d'acceptation\n\n- Un run produit un brouillon `youtube` en base, sans toucher aux autres plateformes\n- Le brouillon respecte le ton de voix du Brand Kernel\n- Le pipeline tourne en mode hors ligne (LLM factice) sans réseau ni clé\n- Aucune source morte ne fait échouer le run\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le contrat commun PlatformPipeline**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le pipeline de contenu TikTok",
+    "labels": [
+      "pipeline",
+      "pilotage"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 3 points\n\n## Contexte\n\nPipeline de contenu TikTok, indépendant des cinq autres : veille propre,\nchoix de sujet propre, cadence propre.\n\nStatistiques de cette plateforme : **saisie manuelle**.\n\nSquelette existant : `src/pilotage/pipelines/tiktok/`\n(`watcher.py`, `writer.py`, `spec.py`).\n\n## Tâches\n\n- [ ] Implémenter `watcher.py` : sources de veille propres à TikTok\n- [ ] Implémenter `writer.py` : format attendu par TikTok, Brand Kernel injecté\n- [ ] Implémenter `spec.py` : cadence et fenêtre horaire\n- [ ] Enregistrer les brouillons en base avec `status = 'drafted'`\n- [ ] Consulter le calendrier pour une éventuelle mention croisée (facultatif)\n\n## Critères d'acceptation\n\n- Un run produit un brouillon `tiktok` en base, sans toucher aux autres plateformes\n- Le brouillon respecte le ton de voix du Brand Kernel\n- Le pipeline tourne en mode hors ligne (LLM factice) sans réseau ni clé\n- Aucune source morte ne fait échouer le run\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le contrat commun PlatformPipeline**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le pipeline de contenu Instagram",
+    "labels": [
+      "pipeline",
+      "pilotage"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 3 points\n\n## Contexte\n\nPipeline de contenu Instagram, indépendant des cinq autres : veille propre,\nchoix de sujet propre, cadence propre.\n\nStatistiques de cette plateforme : **Meta Graph API (automatique)**.\n\nSquelette existant : `src/pilotage/pipelines/instagram/`\n(`watcher.py`, `writer.py`, `spec.py`).\n\n## Tâches\n\n- [ ] Implémenter `watcher.py` : sources de veille propres à Instagram\n- [ ] Implémenter `writer.py` : format attendu par Instagram, Brand Kernel injecté\n- [ ] Implémenter `spec.py` : cadence et fenêtre horaire\n- [ ] Enregistrer les brouillons en base avec `status = 'drafted'`\n- [ ] Consulter le calendrier pour une éventuelle mention croisée (facultatif)\n\n## Critères d'acceptation\n\n- Un run produit un brouillon `instagram` en base, sans toucher aux autres plateformes\n- Le brouillon respecte le ton de voix du Brand Kernel\n- Le pipeline tourne en mode hors ligne (LLM factice) sans réseau ni clé\n- Aucune source morte ne fait échouer le run\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le contrat commun PlatformPipeline**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le pipeline de contenu X",
+    "labels": [
+      "pipeline",
+      "pilotage"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 3 points\n\n## Contexte\n\nPipeline de contenu X, indépendant des cinq autres : veille propre,\nchoix de sujet propre, cadence propre.\n\nStatistiques de cette plateforme : **saisie manuelle**.\n\nSquelette existant : `src/pilotage/pipelines/x/`\n(`watcher.py`, `writer.py`, `spec.py`).\n\n## Tâches\n\n- [ ] Implémenter `watcher.py` : sources de veille propres à X\n- [ ] Implémenter `writer.py` : format attendu par X, Brand Kernel injecté\n- [ ] Implémenter `spec.py` : cadence et fenêtre horaire\n- [ ] Enregistrer les brouillons en base avec `status = 'drafted'`\n- [ ] Consulter le calendrier pour une éventuelle mention croisée (facultatif)\n\n## Critères d'acceptation\n\n- Un run produit un brouillon `x` en base, sans toucher aux autres plateformes\n- Le brouillon respecte le ton de voix du Brand Kernel\n- Le pipeline tourne en mode hors ligne (LLM factice) sans réseau ni clé\n- Aucune source morte ne fait échouer le run\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le contrat commun PlatformPipeline**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le pipeline de contenu Facebook",
+    "labels": [
+      "pipeline",
+      "pilotage"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 3 points\n\n## Contexte\n\nPipeline de contenu Facebook, indépendant des cinq autres : veille propre,\nchoix de sujet propre, cadence propre.\n\nStatistiques de cette plateforme : **Meta Graph API (automatique)**.\n\nSquelette existant : `src/pilotage/pipelines/facebook/`\n(`watcher.py`, `writer.py`, `spec.py`).\n\n## Tâches\n\n- [ ] Implémenter `watcher.py` : sources de veille propres à Facebook\n- [ ] Implémenter `writer.py` : format attendu par Facebook, Brand Kernel injecté\n- [ ] Implémenter `spec.py` : cadence et fenêtre horaire\n- [ ] Enregistrer les brouillons en base avec `status = 'drafted'`\n- [ ] Consulter le calendrier pour une éventuelle mention croisée (facultatif)\n\n## Critères d'acceptation\n\n- Un run produit un brouillon `facebook` en base, sans toucher aux autres plateformes\n- Le brouillon respecte le ton de voix du Brand Kernel\n- Le pipeline tourne en mode hors ligne (LLM factice) sans réseau ni clé\n- Aucune source morte ne fait échouer le run\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le contrat commun PlatformPipeline**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le pipeline de contenu Telegram (canal public)",
+    "labels": [
+      "pipeline",
+      "pilotage"
+    ],
+    "milestone": "Lot 3 — Pipelines de contenu ×6",
+    "body": "> **Lot :** Lot 3 — Pipelines\n> **Estimation :** 3 points\n\n## Contexte\n\nPipeline de contenu Telegram (canal public), indépendant des cinq autres : veille propre,\nchoix de sujet propre, cadence propre.\n\nStatistiques de cette plateforme : **Bot API (automatique)**.\n\nSquelette existant : `src/pilotage/pipelines/telegram_channel/`\n(`watcher.py`, `writer.py`, `spec.py`).\n\n## Tâches\n\n- [ ] Implémenter `watcher.py` : sources de veille propres à Telegram (canal public)\n- [ ] Implémenter `writer.py` : format attendu par Telegram (canal public), Brand Kernel injecté\n- [ ] Implémenter `spec.py` : cadence et fenêtre horaire\n- [ ] Enregistrer les brouillons en base avec `status = 'drafted'`\n- [ ] Consulter le calendrier pour une éventuelle mention croisée (facultatif)\n\n## Critères d'acceptation\n\n- Un run produit un brouillon `telegram_channel` en base, sans toucher aux autres plateformes\n- Le brouillon respecte le ton de voix du Brand Kernel\n- Le pipeline tourne en mode hors ligne (LLM factice) sans réseau ni clé\n- Aucune source morte ne fait échouer le run\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le contrat commun PlatformPipeline**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "[EPIC] Lot 4 — Les 6 bots Telegram de pilotage",
+    "labels": [
+      "epic",
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 21 points\n\n## Contexte\n\nSix bots Telegram **privés**, un par plateforme, avec six tokens BotFather\ndistincts. Usage strictement personnel : recevoir les brouillons, valider ou\ncorriger par boutons, confirmer la publication manuelle, consulter les stats.\n\n⚠️ **Risque n°5 du cadrage — trois objets Telegram à ne pas confondre :**\n\n| Objet | Rôle | Variable |\n|---|---|---|\n| Bot de validation du blog | Valide les articles (existant) | `TELEGRAM_BOT_TOKEN` |\n| 6 bots de pilotage | Reçoivent les brouillons | `PILOTAGE_*_BOT_TOKEN` |\n| Canal Telegram public | **Cible de publication** | `TELEGRAM_CHANNEL_USERNAME` |\n\nPourquoi six bots et pas un : recevoir les brouillons YouTube dans le même fil\nque les brouillons TikTok rend le pilotage illisible, et un token compromis\nn'expose alors qu'une seule plateforme.\n\n## Tâches\n\n- [ ] Créer les 6 bots via @BotFather et réserver les handles\n- [ ] Implémenter le socle commun\n- [ ] Implémenter les 6 bots\n\n## Critères d'acceptation\n\n- Chaque bot ne répond qu'à son `chat_id` autorisé\n- Le clavier inline est retiré après le clic (pas de double décision)\n- L'offset `getUpdates` est persisté (redémarrer ne rejoue pas l'historique)\n- REST brut via `requests` : pas d'asyncio, pas de `python-telegram-bot`\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le repository du calendrier partagé**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le socle commun des bots Telegram",
+    "labels": [
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 5 points\n\n## Contexte\n\nTout ce qui ne dépend pas de la plateforme, factorisé une fois.\n\nReprendre l'approche validée dans\n`blogseo.infrastructure.notifications.telegram` — **la reprendre, pas\nl'importer** : la règle d'isolation interdit à `pilotage` d'importer `blogseo`.\nSi le code mérite vraiment d'être partagé, l'extraire d'abord dans un paquet\ntiers, ce qui est une décision à part entière.\n\n## Tâches\n\n- [ ] Long-polling `getUpdates` avec offset persisté sur disque\n- [ ] Clavier inline générique et retrait après clic\n- [ ] Garde « un seul `chat_id` autorisé » — ces bots sont privés\n- [ ] Router les commandes `/en_attente`, `/stats`, `/publie`\n- [ ] Retry avec backoff sur les erreurs réseau\n\n## Critères d'acceptation\n\n- Un redémarrage ne rejoue pas les décisions déjà prises\n- Un message venant d'un autre `chat_id` est ignoré et journalisé\n- Aucune dépendance nouvelle installée\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le repository du calendrier partagé**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le bot Telegram YouTube avec /stats et /en_attente",
+    "labels": [
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 3 points\n\n## Contexte\n\nBot de pilotage YouTube. Token `PILOTAGE_YOUTUBE_BOT_TOKEN`,\nchat `PILOTAGE_YOUTUBE_CHAT_ID` (déjà déclarés dans `.env.example`).\n\nSquelette existant : `src/pilotage/bots/youtube/handlers.py`.\n\n## Tâches\n\n- [ ] `/en_attente` : lister les contenus en attente de validation\n- [ ] `/stats` : dernières mesures de la plateforme\n- [ ] `/publie [lien]` : enregistrer une publication manuelle et son lien\n- [ ] Boutons inline ✅ valider · ✏️ corriger · ❌ rejeter\n\n## Critères d'acceptation\n\n- Chaque action écrit via `CalendarRepository`, jamais en SQL direct\n- `/publie` valide le lien et refuse un doublon (contrainte `uq_post_url`)\n- Le bot ne voit que les contenus de SA plateforme\n- ✏️ renvoie le brouillon au rédacteur avec le feedback, sans rien publier\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le socle commun des bots Telegram**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le bot Telegram TikTok avec /stats et /en_attente",
+    "labels": [
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 3 points\n\n## Contexte\n\nBot de pilotage TikTok. Token `PILOTAGE_TIKTOK_BOT_TOKEN`,\nchat `PILOTAGE_TIKTOK_CHAT_ID` (déjà déclarés dans `.env.example`).\n\nSquelette existant : `src/pilotage/bots/tiktok/handlers.py`.\n\n⚠️ Cette plateforme n'a **pas** d'API d'engagement gratuite : ce bot porte en\nplus le rappel hebdomadaire de saisie manuelle des statistiques.\n\n## Tâches\n\n- [ ] `/en_attente` : lister les contenus en attente de validation\n- [ ] `/stats` : dernières mesures de la plateforme\n- [ ] `/publie [lien]` : enregistrer une publication manuelle et son lien\n- [ ] Boutons inline ✅ valider · ✏️ corriger · ❌ rejeter\n- [ ] Rappel hebdomadaire de saisie des chiffres (`STATS_MANUAL_REMINDER_CRON`)\n\n## Critères d'acceptation\n\n- Chaque action écrit via `CalendarRepository`, jamais en SQL direct\n- `/publie` valide le lien et refuse un doublon (contrainte `uq_post_url`)\n- Le bot ne voit que les contenus de SA plateforme\n- ✏️ renvoie le brouillon au rédacteur avec le feedback, sans rien publier\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le socle commun des bots Telegram**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le bot Telegram Instagram avec /stats et /en_attente",
+    "labels": [
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 3 points\n\n## Contexte\n\nBot de pilotage Instagram. Token `PILOTAGE_INSTAGRAM_BOT_TOKEN`,\nchat `PILOTAGE_INSTAGRAM_CHAT_ID` (déjà déclarés dans `.env.example`).\n\nSquelette existant : `src/pilotage/bots/instagram/handlers.py`.\n\n## Tâches\n\n- [ ] `/en_attente` : lister les contenus en attente de validation\n- [ ] `/stats` : dernières mesures de la plateforme\n- [ ] `/publie [lien]` : enregistrer une publication manuelle et son lien\n- [ ] Boutons inline ✅ valider · ✏️ corriger · ❌ rejeter\n\n## Critères d'acceptation\n\n- Chaque action écrit via `CalendarRepository`, jamais en SQL direct\n- `/publie` valide le lien et refuse un doublon (contrainte `uq_post_url`)\n- Le bot ne voit que les contenus de SA plateforme\n- ✏️ renvoie le brouillon au rédacteur avec le feedback, sans rien publier\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le socle commun des bots Telegram**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le bot Telegram X avec /stats et /en_attente",
+    "labels": [
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 3 points\n\n## Contexte\n\nBot de pilotage X. Token `PILOTAGE_X_BOT_TOKEN`,\nchat `PILOTAGE_X_CHAT_ID` (déjà déclarés dans `.env.example`).\n\nSquelette existant : `src/pilotage/bots/x/handlers.py`.\n\n⚠️ Cette plateforme n'a **pas** d'API d'engagement gratuite : ce bot porte en\nplus le rappel hebdomadaire de saisie manuelle des statistiques.\n\n## Tâches\n\n- [ ] `/en_attente` : lister les contenus en attente de validation\n- [ ] `/stats` : dernières mesures de la plateforme\n- [ ] `/publie [lien]` : enregistrer une publication manuelle et son lien\n- [ ] Boutons inline ✅ valider · ✏️ corriger · ❌ rejeter\n- [ ] Rappel hebdomadaire de saisie des chiffres (`STATS_MANUAL_REMINDER_CRON`)\n\n## Critères d'acceptation\n\n- Chaque action écrit via `CalendarRepository`, jamais en SQL direct\n- `/publie` valide le lien et refuse un doublon (contrainte `uq_post_url`)\n- Le bot ne voit que les contenus de SA plateforme\n- ✏️ renvoie le brouillon au rédacteur avec le feedback, sans rien publier\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le socle commun des bots Telegram**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le bot Telegram Facebook avec /stats et /en_attente",
+    "labels": [
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 3 points\n\n## Contexte\n\nBot de pilotage Facebook. Token `PILOTAGE_FACEBOOK_BOT_TOKEN`,\nchat `PILOTAGE_FACEBOOK_CHAT_ID` (déjà déclarés dans `.env.example`).\n\nSquelette existant : `src/pilotage/bots/facebook/handlers.py`.\n\n## Tâches\n\n- [ ] `/en_attente` : lister les contenus en attente de validation\n- [ ] `/stats` : dernières mesures de la plateforme\n- [ ] `/publie [lien]` : enregistrer une publication manuelle et son lien\n- [ ] Boutons inline ✅ valider · ✏️ corriger · ❌ rejeter\n\n## Critères d'acceptation\n\n- Chaque action écrit via `CalendarRepository`, jamais en SQL direct\n- `/publie` valide le lien et refuse un doublon (contrainte `uq_post_url`)\n- Le bot ne voit que les contenus de SA plateforme\n- ✏️ renvoie le brouillon au rédacteur avec le feedback, sans rien publier\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le socle commun des bots Telegram**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le bot Telegram Telegram (canal public) avec /stats et /en_attente",
+    "labels": [
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 4 — Bots Telegram ×6",
+    "body": "> **Lot :** Lot 4 — Bots\n> **Estimation :** 3 points\n\n## Contexte\n\nBot de pilotage Telegram (canal public). Token `PILOTAGE_TELEGRAM_CHANNEL_BOT_TOKEN`,\nchat `PILOTAGE_TELEGRAM_CHANNEL_CHAT_ID` (déjà déclarés dans `.env.example`).\n\nSquelette existant : `src/pilotage/bots/telegram_channel/handlers.py`.\n\n## Tâches\n\n- [ ] `/en_attente` : lister les contenus en attente de validation\n- [ ] `/stats` : dernières mesures de la plateforme\n- [ ] `/publie [lien]` : enregistrer une publication manuelle et son lien\n- [ ] Boutons inline ✅ valider · ✏️ corriger · ❌ rejeter\n\n## Critères d'acceptation\n\n- Chaque action écrit via `CalendarRepository`, jamais en SQL direct\n- `/publie` valide le lien et refuse un doublon (contrainte `uq_post_url`)\n- Le bot ne voit que les contenus de SA plateforme\n- ✏️ renvoie le brouillon au rédacteur avec le feedback, sans rien publier\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le socle commun des bots Telegram**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "[EPIC] Lot 5 — Agent Collecteur de Statistiques",
+    "labels": [
+      "epic",
+      "stats",
+      "pilotage"
+    ],
+    "milestone": "Lot 5 — Agent Collecteur de Stats",
+    "body": "> **Lot :** Lot 5 — Stats\n> **Estimation :** 13 points\n\n## Contexte\n\nAutomatique là où une API gratuite existe, saisie manuelle guidée ailleurs.\n\n| Plateforme | Source | Mode |\n|---|---|---|\n| YouTube | Data API v3 (10 000 unités/jour) | auto |\n| Facebook / Instagram | Meta Graph API | auto |\n| Telegram (canal) | Bot API, bot admin du canal | auto |\n| X / TikTok | **aucune API gratuite** | manuel |\n\nToute mesure atterrit dans `stat_snapshots`, avec `source = 'api'` ou\n`'manual'` : le tableau de bord doit pouvoir distinguer les deux, mais n'a pas\nà traiter la mesure différemment.\n\n## Tâches\n\n- [ ] Définir le port `StatsCollector`\n- [ ] Implémenter les adapters YouTube, Meta et Telegram\n- [ ] Implémenter la saisie manuelle guidée pour X et TikTok\n- [ ] Planifier la collecte (quotidienne pour l'automatique, hebdomadaire pour le manuel)\n\n## Critères d'acceptation\n\n- Un collecteur en panne journalise et rend une liste vide\n- Une API Meta indisponible n'empêche jamais la collecte YouTube\n- Les mesures s'accumulent, aucune n'est jamais écrasée\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le repository du calendrier partagé**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer le port StatsCollector",
+    "labels": [
+      "stats",
+      "domain",
+      "pilotage"
+    ],
+    "milestone": "Lot 5 — Agent Collecteur de Stats",
+    "body": "> **Lot :** Lot 5 — Stats\n> **Estimation :** 2 points\n\n## Contexte\n\nPort commun : `def collect(self, since: date) -> list[StatSnapshot]`.\n\nChaque adapter l'implémente. Le tableau de bord ne sait jamais si un chiffre\nvient d'une API ou du clavier.\n\n## Tâches\n\n- [ ] Définir la classe de base abstraite\n- [ ] Journaliser et renvoyer une liste vide en cas de panne, jamais lever\n- [ ] Écrire les mesures via `CalendarRepository.add_snapshot`\n\n## Critères d'acceptation\n\n- Un adapter en panne n'affecte aucun autre\n- Ajouter une plateforme = ajouter un adapter, rien d'autre\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le repository du calendrier partagé**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Implémenter le collecteur YouTube (Data API v3)",
+    "labels": [
+      "stats",
+      "pilotage",
+      "free-tier",
+      "bonne-premiere-issue"
+    ],
+    "milestone": "Lot 5 — Agent Collecteur de Stats",
+    "body": "> **Lot :** Lot 5 — Stats\n> **Estimation :** 3 points\n\n## Contexte\n\n`videos.list(part=\"statistics\")` pour vues, likes et commentaires.\n\nQuota gratuit : 10 000 unités/jour, une lecture coûte 1 unité — très large pour\nune collecte quotidienne. Clé API simple, aucun OAuth, aucune carte bancaire.\n\nVariables déjà déclarées : `YOUTUBE_API_KEY`, `YOUTUBE_CHANNEL_ID`.\n\n## Tâches\n\n- [ ] Appeler l'API en REST brut (`requests`), sans SDK Google\n- [ ] Retrouver le `video_id` depuis `platform_posts.external_id`\n- [ ] Écrire un `stat_snapshot` par vidéo avec `source = 'api'`\n- [ ] Gérer le 403 « quota exceeded » comme une panne dégradable\n\n## Critères d'acceptation\n\n- Aucun SDK ajouté aux dépendances\n- Un quota épuisé journalise et rend une liste vide, ne lève pas\n- La consommation reste très en dessous de 10 000 unités/jour\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le port StatsCollector**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Implémenter le collecteur Meta (Facebook + Instagram)",
+    "labels": [
+      "stats",
+      "pilotage",
+      "free-tier"
+    ],
+    "milestone": "Lot 5 — Agent Collecteur de Stats",
+    "body": "> **Lot :** Lot 5 — Stats\n> **Estimation :** 5 points\n\n## Contexte\n\n`/{page-id}/insights` et `/{ig-user-id}/media` via la Meta Graph API.\n\n⚠️ **Risque n°3 du cadrage.** L'API est gratuite ; c'est la mise en place qui\ncoûte du temps, et elle est **entièrement administrative** :\n\n1. un compte Meta Business ;\n2. une Page Facebook ;\n3. un compte Instagram **Business** relié à cette Page ;\n4. une application Meta (mode développement suffit pour ses propres comptes) ;\n5. un jeton de page longue durée — **qui expire au bout d'environ 60 jours**.\n\nÀ démarrer dès maintenant, en parallèle des lots 1 et 2.\n\n## Tâches\n\n- [ ] Documenter pas à pas la création du compte et du jeton\n- [ ] Implémenter les deux adapters en REST brut\n- [ ] Gérer l'expiration du jeton : message explicite, jamais un plantage obscur\n- [ ] Envoyer un rappel de renouvellement via le bot avant l'échéance\n\n## Critères d'acceptation\n\n- Un jeton expiré produit un message actionnable, pas une trace d'exception\n- Facebook et Instagram sont deux adapters distincts (l'un peut tomber sans l'autre)\n- La procédure de mise en place est écrite quelque part de retrouvable\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le port StatsCollector**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Implémenter le collecteur Telegram (canal public)",
+    "labels": [
+      "stats",
+      "pilotage",
+      "free-tier"
+    ],
+    "milestone": "Lot 5 — Agent Collecteur de Stats",
+    "body": "> **Lot :** Lot 5 — Stats\n> **Estimation :** 2 points\n\n## Contexte\n\n`getChatMemberCount` pour le nombre d'abonnés du canal. Le bot doit être\n**administrateur** du canal.\n\n⚠️ **Décision n°13 du cadrage à trancher** : les vues par message ne sont pas\nexposées à un bot. Soit on s'en tient aux abonnés, soit on les saisit à la\nmain. À arrêter avec l'auteur avant de coder.\n\n## Tâches\n\n- [ ] Trancher la décision n°13 avec l'auteur\n- [ ] Implémenter la collecte des abonnés (`platform_post_id = NULL`, mesure de compte)\n- [ ] Si la décision l'impose : ajouter la saisie manuelle des vues par message\n\n## Critères d'acceptation\n\n- Une mesure de compte est bien enregistrée avec `platform_post_id = NULL`\n- Le bot détecte qu'il n'est pas admin et le dit clairement\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le port StatsCollector**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Implémenter la saisie manuelle guidée pour X et TikTok",
+    "labels": [
+      "stats",
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 5 — Agent Collecteur de Stats",
+    "body": "> **Lot :** Lot 5 — Stats\n> **Estimation :** 3 points\n\n## Contexte\n\nCes deux plateformes n'ont aucune API d'engagement gratuite.\n\n⚠️ **Risque n°4 du cadrage** : une saisie manuelle non tenue, ce sont deux\nplateformes aveugles dans le tableau de bord. Le rappel doit donc être aussi\npeu coûteux que possible à honorer — une question à la fois, jamais un\nformulaire.\n\n## Tâches\n\n- [ ] Rappel hebdomadaire (`STATS_MANUAL_REMINDER_CRON`, lundi 9 h par défaut)\n- [ ] Lister les publications sans mesure récente\n- [ ] Demander les chiffres un par un, en conversation\n- [ ] Écrire avec `source = 'manual'`\n- [ ] Permettre de passer une publication sans bloquer la suite\n\n## Critères d'acceptation\n\n- Le tableau de bord distingue visuellement mesure API et mesure déclarée\n- Un rappel ignoré ne bloque rien : il repart la semaine suivante\n- Répondre à trois publications prend moins d'une minute\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le port StatsCollector**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "[EPIC] Lot 6 — Tableau de bord Streamlit",
+    "labels": [
+      "epic",
+      "dashboard",
+      "pilotage"
+    ],
+    "milestone": "Lot 6 — Dashboard",
+    "body": "> **Lot :** Lot 6 — Dashboard\n> **Estimation :** 13 points\n\n## Contexte\n\nApplication Streamlit locale : 100 % Python, 100 % gratuite, exécutée sur le\nposte de l'auteur.\n\n⚠️ À ne pas confondre avec `blogseo dashboard`, qui génère une page HTML\nstatique des runs du pipeline blog. Les deux coexistent sans se connaître.\n\n**Le tableau de bord est en lecture seule** : aucune écriture en base, aucune\ngénération de contenu, aucun appel LLM.\n\n## Tâches\n\n- [ ] Créer l'application et ses trois onglets\n- [ ] Ajouter `streamlit` aux dépendances et une cible `make dashboard-pilotage`\n\n## Critères d'acceptation\n\n- `streamlit run src/pilotage/dashboard/app.py` démarre sans configuration\n- Aucune écriture en base depuis le tableau de bord\n- Une base vide affiche un état vide lisible, pas une trace d'exception\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Créer le port StatsCollector**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer la vue Kanban du pipeline de contenu",
+    "labels": [
+      "dashboard",
+      "pilotage"
+    ],
+    "milestone": "Lot 6 — Dashboard",
+    "body": "> **Lot :** Lot 6 — Dashboard\n> **Estimation :** 3 points\n\n## Contexte\n\nColonnes = les sept états de `ContentStatus`, lignes = les plateformes. C'est la vue d'ensemble qui répond à « qu'est-ce qui m'attend cette semaine ».\n\n## Tâches\n\n- [ ] Une colonne par état, de `idea` à `archived`\n- [ ] Filtre par plateforme\n- [ ] Compteur par colonne\n\n## Critères d'acceptation\n\n- Les colonnes correspondent exactement aux valeurs de `ContentStatus`\n- Vue en lecture seule : valider se fait dans le bot, pas ici\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **[EPIC] Lot 6 — Tableau de bord Streamlit**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer la vue Statistiques dans le temps",
+    "labels": [
+      "dashboard",
+      "pilotage"
+    ],
+    "milestone": "Lot 6 — Dashboard",
+    "body": "> **Lot :** Lot 6 — Dashboard\n> **Estimation :** 3 points\n\n## Contexte\n\nSéries temporelles par plateforme, construites depuis `stat_snapshots`. C'est l'accumulation des mesures qui permet la courbe.\n\n## Tâches\n\n- [ ] Courbes vues / likes / abonnés par plateforme\n- [ ] Sélecteur de période\n- [ ] Distinguer visuellement `source = 'manual'` de `source = 'api'`\n\n## Critères d'acceptation\n\n- Une plateforme sans mesure affiche un état vide explicite\n- Les mesures manuelles sont identifiables d'un coup d'œil\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **[EPIC] Lot 6 — Tableau de bord Streamlit**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Créer la vue Conversions par plateforme d'origine",
+    "labels": [
+      "dashboard",
+      "pilotage"
+    ],
+    "milestone": "Lot 6 — Dashboard",
+    "body": "> **Lot :** Lot 6 — Dashboard\n> **Estimation :** 5 points\n\n## Contexte\n\nClics d'affiliation (n8n, Make) et ventes de produits digitaux, ventilés par plateforme d'origine.\n\n⚠️ **Risque n°6 du cadrage** : cette vue n'affichera que ce qui aura été enregistré. Elle dépend entièrement du paramètre de suivi des liens (décision n°6), qui vit dans le Brand Kernel.\n\n## Tâches\n\n- [ ] Clics d'affiliation par plateforme et par offre\n- [ ] Ventes et chiffre d'affaires en TND\n- [ ] Rappeler explicitement quand aucun paramètre de suivi n'est configuré\n\n## Critères d'acceptation\n\n- La ventilation par plateforme d'origine est correcte\n- Sans paramètre de suivi, la vue le dit au lieu d'afficher des zéros trompeurs\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **[EPIC] Lot 6 — Tableau de bord Streamlit**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "[EPIC] Lot 7 — Tests bout-en-bout",
+    "labels": [
+      "epic",
+      "test",
+      "pilotage"
+    ],
+    "milestone": "Lot 7 — Tests bout-en-bout",
+    "body": "> **Lot :** Lot 7 — Tests E2E\n> **Estimation :** 8 points\n\n## Contexte\n\nLe meilleur filet du projet aujourd'hui est `make offline` : un run complet du\npipeline blog, sans clé ni réseau. Le pilotage doit avoir son équivalent.\n\n## Tâches\n\n- [ ] Un run complet d'un pipeline en mode hors ligne\n- [ ] Simuler une conversation de bot de bout en bout\n- [ ] Vérifier l'isolation à chaque exécution de la CI\n\n## Critères d'acceptation\n\n- `make offline-pilotage` tourne sans clé, sans réseau, sans base préexistante\n- La CI reste verte sans aucun secret configuré\n- Aucun test ne dépend d'un appel réseau réel\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **[EPIC] Lot 6 — Tableau de bord Streamlit**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Ajouter un mode hors ligne au pilotage",
+    "labels": [
+      "test",
+      "pilotage"
+    ],
+    "milestone": "Lot 7 — Tests bout-en-bout",
+    "body": "> **Lot :** Lot 7 — Tests E2E\n> **Estimation :** 5 points\n\n## Contexte\n\nÉquivalent de `make offline` pour le pilotage : un run complet, du sujet au\nbrouillon enregistré en base, avec un LLM factice et des sources de veille\nneutres.\n\nC'est ce qui rendra les six pipelines testables sans consommer un seul appel\nLLM gratuit.\n\n## Tâches\n\n- [ ] LLM factice et sources neutres injectés au niveau de la composition\n- [ ] Base SQLite temporaire créée et détruite par le test\n- [ ] Cible `make offline-pilotage`\n\n## Critères d'acceptation\n\n- Un run hors ligne ne fait aucun appel réseau (vérifié, pas supposé)\n- Le test tourne en moins de 30 secondes\n- Aucune clé d'API n'est nécessaire\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Simuler une conversation de bot de bout en bout",
+    "labels": [
+      "test",
+      "bot",
+      "pilotage"
+    ],
+    "milestone": "Lot 7 — Tests bout-en-bout",
+    "body": "> **Lot :** Lot 7 — Tests E2E\n> **Estimation :** 3 points\n\n## Contexte\n\nRejouer un scénario complet sans toucher à l'API Telegram : brouillon reçu →\n✅ validé → `/publie [lien]` → publication enregistrée → mesure collectée.\n\nLe transport Telegram est remplacé par un double de test ; toute la logique de\ndécision reste réelle.\n\n## Tâches\n\n- [ ] Créer un double de test du transport Telegram\n- [ ] Rejouer les trois décisions ✅ / ✏️ / ❌\n- [ ] Vérifier l'état en base après chaque décision\n- [ ] Vérifier qu'un `chat_id` non autorisé est ignoré\n\n## Critères d'acceptation\n\n- Aucun appel réseau vers api.telegram.org\n- ✏️ renvoie bien au rédacteur sans rien publier\n- Un `/publie` en double est refusé par la contrainte d'unicité\n\n## Dépendances\n\n> Les numéros d'issue sont attribués à la création : ces liens\n> renvoient au titre exact de l'issue bloquante.\n\n- ⛔ bloquée par : **Ajouter un mode hors ligne au pilotage**\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
+  },
+  {
+    "title": "Brancher le pilotage sur la CI GitHub Actions",
+    "labels": [
+      "test",
+      "infra",
+      "pilotage"
+    ],
+    "milestone": "Lot 7 — Tests bout-en-bout",
+    "body": "> **Lot :** Lot 7 — Tests E2E\n> **Estimation :** 2 points\n\n## Contexte\n\n`.github/workflows/ci.yml` doit couvrir `src/pilotage/` comme il couvre déjà\n`src/blogseo/`, sans exiger le moindre secret.\n\nPoint de vigilance relevé pendant le cadrage : `pyproject.toml` déclare\n`requires-python = \">=3.10\"`, mais plusieurs modules de `blogseo` importent\n`datetime.UTC`, qui n'existe qu'à partir de **3.11**. Sur Python 3.10, la\ncollecte des tests échoue à l'import. À trancher : relever la borne à 3.11, ou\nremplacer `UTC` par `timezone.utc`.\n\n## Tâches\n\n- [ ] Étendre `ruff check` et `pytest` à `src/pilotage` et ses tests\n- [ ] Trancher l'incohérence `requires-python` / `datetime.UTC`\n- [ ] Vérifier que la CI passe sans aucun secret configuré\n\n## Critères d'acceptation\n\n- La CI est verte sur un fork sans secret\n- La version de Python annoncée est celle réellement supportée\n- `test_pilotage_scaffolding.py` tourne à chaque push\n\n---\n\n_Issue générée depuis `CADRAGE.md` par `scripts/create_github_issues.sh`._",
+    "close": false
   }
 ]
