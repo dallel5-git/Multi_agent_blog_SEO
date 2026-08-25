@@ -2,10 +2,13 @@
 
 Commandes disponibles :
 
-    pilotage migrate            Applique le schéma SQL du calendrier partagé
-    pilotage check               Vérifie la configuration du pilotage
-    pilotage sync-blog           Verse les articles publiés du blog dans le calendrier
-    pilotage run <plateforme>    Lance un pipeline (watch → choose_topic → write → submit)
+    pilotage migrate                Applique le schéma SQL du calendrier partagé
+    pilotage check                  Vérifie la configuration du pilotage
+    pilotage sync-blog              Verse les articles publiés du blog dans le calendrier
+    pilotage run <plateforme>       Lance un pipeline (watch → choose_topic → write → submit)
+    pilotage bot <plateforme>       Démarre le bot de pilotage (boucle infinie)
+    pilotage remind-stats <plateforme>
+                                     Envoie le rappel de saisie manuelle (TikTok, X)
 """
 
 from __future__ import annotations
@@ -13,6 +16,13 @@ from __future__ import annotations
 import argparse
 import sys
 
+from .bots.base import PilotageBot
+from .bots.facebook import create_bot as create_facebook_bot
+from .bots.instagram import create_bot as create_instagram_bot
+from .bots.telegram_channel import create_bot as create_telegram_channel_bot
+from .bots.tiktok import create_bot as create_tiktok_bot
+from .bots.x import create_bot as create_x_bot
+from .bots.youtube import create_bot as create_youtube_bot
 from .brand_kernel.loader import load_brand_kernel
 from .config.settings import PilotageSettings
 from .pipelines.base import PlatformPipeline
@@ -43,6 +53,16 @@ _PIPELINES: dict[Platform, type[PlatformPipeline]] = {
     Platform.TELEGRAM_CHANNEL: TelegramChannelPipeline,
 }
 
+#: Même principe que `_PIPELINES` pour les bots : un seul endroit à étendre.
+_BOT_FACTORIES = {
+    Platform.YOUTUBE: create_youtube_bot,
+    Platform.TIKTOK: create_tiktok_bot,
+    Platform.INSTAGRAM: create_instagram_bot,
+    Platform.X: create_x_bot,
+    Platform.FACEBOOK: create_facebook_bot,
+    Platform.TELEGRAM_CHANNEL: create_telegram_channel_bot,
+}
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -58,6 +78,16 @@ def build_parser() -> argparse.ArgumentParser:
     run_cmd.add_argument("platform", choices=[p.value for p in _PIPELINES])
     run_cmd.add_argument("--offline", action="store_true",
                           help="Aucun appel réseau : veille vide, LLM factice")
+
+    bot_cmd = sub.add_parser("bot", help="Démarre le bot de pilotage d'une plateforme")
+    bot_cmd.add_argument("platform", choices=[p.value for p in _BOT_FACTORIES])
+    bot_cmd.add_argument("--once", action="store_true",
+                          help="Un seul tour de sondage (`getUpdates`), utile pour tester")
+
+    remind_cmd = sub.add_parser(
+        "remind-stats", help="Envoie le rappel de saisie manuelle des statistiques"
+    )
+    remind_cmd.add_argument("platform", choices=[p.value for p in _BOT_FACTORIES])
 
     return parser
 
@@ -123,6 +153,46 @@ def cmd_run(settings: PilotageSettings, platform_name: str, *, offline: bool) ->
     return EXIT_OK
 
 
+def _make_bot(settings: PilotageSettings, platform_name: str, repository: CalendarRepository) -> PilotageBot:
+    platform = Platform(platform_name)
+    return _BOT_FACTORIES[platform](settings, repository)
+
+
+def cmd_bot(settings: PilotageSettings, platform_name: str, *, once: bool) -> int:
+    repository = CalendarRepository(settings.calendar.db_path)
+    try:
+        bot = _make_bot(settings, platform_name, repository)
+        if not bot.is_configured():
+            print(f"✖ Bot {platform_name} non configuré (token/chat_id manquant dans .env).")
+            return EXIT_CONFIG
+        if once:
+            traitees = bot.poll_once()
+            print(f"✅ 1 tour de sondage effectué ({traitees} mise(s) à jour traitée(s)).")
+            return EXIT_OK
+        bot.run_forever()  # ne revient jamais tant que le processus tourne
+        return EXIT_OK
+    finally:
+        repository.close()
+
+
+def cmd_remind_stats(settings: PilotageSettings, platform_name: str) -> int:
+    repository = CalendarRepository(settings.calendar.db_path)
+    try:
+        bot = _make_bot(settings, platform_name, repository)
+        if not bot.is_configured():
+            print(f"✖ Bot {platform_name} non configuré (token/chat_id manquant dans .env).")
+            return EXIT_CONFIG
+        message = bot.compose_manual_stats_reminder()
+        if message is None:
+            print("✅ Rien à rappeler : toutes les publications ont une mesure récente.")
+            return EXIT_OK
+        bot.send_message(message)
+        print("✅ Rappel envoyé.")
+        return EXIT_OK
+    finally:
+        repository.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     settings = PilotageSettings.from_env()
@@ -135,6 +205,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_sync_blog(settings)
     if args.command == "run":
         return cmd_run(settings, args.platform, offline=args.offline)
+    if args.command == "bot":
+        return cmd_bot(settings, args.platform, once=args.once)
+    if args.command == "remind-stats":
+        return cmd_remind_stats(settings, args.platform)
 
     return EXIT_ERROR
 

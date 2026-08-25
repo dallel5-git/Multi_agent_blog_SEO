@@ -110,6 +110,21 @@ class CalendarRepository:
                 (status.value, item_id),
             )
 
+    def update_body(self, item_id: int, body: str) -> None:
+        """Utilisé par le bouton ✏️ des bots : réécrit `body` avec le retour
+        de l'auteur, sans changer le statut (`_handle_callback` s'en charge)."""
+        with self._connection:
+            self._connection.execute(
+                "UPDATE content_items SET body = ?, updated_at = datetime('now') WHERE id = ?",
+                (body, item_id),
+            )
+
+    def get_item(self, item_id: int) -> ContentItem | None:
+        row = self._connection.execute(
+            "SELECT * FROM content_items WHERE id = ?", (item_id,)
+        ).fetchone()
+        return _row_to_content_item(row) if row else None
+
     def list_by_platform(self, platform: Platform) -> list[ContentItem]:
         rows = self._connection.execute(
             "SELECT * FROM content_items WHERE platform = ? ORDER BY created_at DESC",
