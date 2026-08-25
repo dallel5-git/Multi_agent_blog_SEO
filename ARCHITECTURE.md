@@ -235,7 +235,8 @@ chiffre isolé.
 
 ## 6. Exécution : hybride Actions / local
 
-Décision prise avec l'auteur, à formaliser en ADR 0009. Elle nuance
+Décision prise avec l'auteur, formalisée en
+[ADR 0009](docs/adr/0009-execution-hybride-pilotage.md). Elle nuance
 [l'ADR 0005](docs/adr/0005-scheduler-local-plutot-que-github-actions.md), qui
 avait rejeté GitHub Actions pour le blog — pour une raison qui ne s'applique
 qu'au blog : le bouton ❌ doit écrire sur le disque de l'auteur.

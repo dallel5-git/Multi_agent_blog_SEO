@@ -167,7 +167,8 @@ Trois options, aucune tranchée :
 | Actions envoie directement dans Telegram, le bot local écrit en base | Aucun transport de fichier | Le token de bot devient un secret GitHub |
 
 **Repli sûr en attendant : tout en local.** Le système est fonctionnel ainsi ;
-Actions n'est qu'une commodité. À formaliser en ADR 0009.
+Actions n'est qu'une commodité. Formalisé en
+[ADR 0009](docs/adr/0009-execution-hybride-pilotage.md).
 
 ### Risque 2 — Six pipelines, c'est six fois la charge éditoriale
 
