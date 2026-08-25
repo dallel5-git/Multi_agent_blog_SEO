@@ -2,9 +2,10 @@
 
 Commandes disponibles :
 
-    pilotage migrate     Applique le schéma SQL du calendrier partagé
-    pilotage check       Vérifie la configuration du pilotage
-    pilotage sync-blog   Verse les articles publiés du blog dans le calendrier
+    pilotage migrate            Applique le schéma SQL du calendrier partagé
+    pilotage check               Vérifie la configuration du pilotage
+    pilotage sync-blog           Verse les articles publiés du blog dans le calendrier
+    pilotage run <plateforme>    Lance un pipeline (watch → choose_topic → write → submit)
 """
 
 from __future__ import annotations
@@ -14,6 +15,9 @@ import sys
 
 from .brand_kernel.loader import load_brand_kernel
 from .config.settings import PilotageSettings
+from .pipelines.base import PlatformPipeline
+from .pipelines.youtube import YouTubePipeline
+from .platforms import Platform
 from .shared_calendar.blog_bridge import sync_blog_articles
 from .shared_calendar.migrate import apply_schema
 from .shared_calendar.repository import CalendarRepository
@@ -21,6 +25,13 @@ from .shared_calendar.repository import CalendarRepository
 EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_CONFIG = 2
+
+#: Un pipeline implémenté par plateforme. Étendre cette table est le SEUL
+#: endroit à toucher pour brancher un nouveau pipeline sur la CLI — le
+#: pipeline lui-même n'a besoin de rien connaître d'ici.
+_PIPELINES: dict[Platform, type[PlatformPipeline]] = {
+    Platform.YOUTUBE: YouTubePipeline,
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -32,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("migrate", help="Applique le schéma SQL du calendrier partagé")
     sub.add_parser("check", help="Vérifie la configuration du pilotage")
     sub.add_parser("sync-blog", help="Verse les articles publiés du blog dans le calendrier")
+
+    run_cmd = sub.add_parser("run", help="Lance un pipeline de plateforme")
+    run_cmd.add_argument("platform", choices=[p.value for p in _PIPELINES])
+    run_cmd.add_argument("--offline", action="store_true",
+                          help="Aucun appel réseau : veille vide, LLM factice")
+
     return parser
 
 
@@ -81,6 +98,21 @@ def cmd_sync_blog(settings: PilotageSettings) -> int:
     return EXIT_OK
 
 
+def cmd_run(settings: PilotageSettings, platform_name: str, *, offline: bool) -> int:
+    platform = Platform(platform_name)
+    pipeline_cls = _PIPELINES[platform]
+
+    repository = CalendarRepository(settings.calendar.db_path)
+    try:
+        pipeline = pipeline_cls(repository=repository, offline=offline)
+        item_id = pipeline.run()
+    finally:
+        repository.close()
+
+    print(f"✅ Brouillon #{item_id} enregistré pour {platform.label}.")
+    return EXIT_OK
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     settings = PilotageSettings.from_env()
@@ -91,6 +123,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_check(settings)
     if args.command == "sync-blog":
         return cmd_sync_blog(settings)
+    if args.command == "run":
+        return cmd_run(settings, args.platform, offline=args.offline)
 
     return EXIT_ERROR
 
