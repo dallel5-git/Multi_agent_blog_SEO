@@ -72,6 +72,20 @@ class Draft:
     topic_summary: str = ""
 
 
+def _render_body_for_storage(draft: Draft) -> str:
+    """Sérialise `Draft` en un seul texte : `content_items.body` est le seul
+    champ texte libre du schéma (Lot 2, déjà figé) — `image_prompt` et
+    `carousel_pages` doivent donc y être inclus, jamais silencieusement
+    perdus entre `write()` et la relecture du brouillon."""
+    parts = [draft.body]
+    if draft.carousel_pages:
+        parts.append("--- PAGES DU CAROUSEL ---")
+        parts.extend(f"[Page {i}] {page}" for i, page in enumerate(draft.carousel_pages, start=1))
+    if draft.image_prompt:
+        parts.append(f"--- PROMPT IMAGE (thème réutilisable) ---\n{draft.image_prompt}")
+    return "\n\n".join(parts)
+
+
 class PlatformPipeline(ABC):
     """Contrat `watch → choose_topic → write → submit` d'un pipeline de plateforme."""
 
@@ -120,7 +134,7 @@ class PlatformPipeline(ABC):
                 platform=self.platform,
                 title=draft.title,
                 topic=draft.topic_summary or None,
-                body=draft.body,
+                body=_render_body_for_storage(draft),
                 status=ContentStatus.DRAFTED,
             )
         )

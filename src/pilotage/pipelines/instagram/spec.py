@@ -1,6 +1,20 @@
 """Cadence et paramètres du pipeline Instagram.
 
-TODO — Lot 3 : fréquence de publication, fenêtre horaire, nombre de brouillons
-par run. Aucune valeur n'est décidée à ce stade : la cadence par plateforme
-est une décision de l'auteur (voir `CADRAGE.md`, checklist n°4).
+Un carousel demande plus de préparation (template visuel personnalisé par
+page) qu'un post simple : 1 carousel / semaine.
 """
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class PostingSpec:
+    posts_per_week: int
+    drafts_per_run: int = 1
+    preferred_weekday: int | None = None
+    preferred_hour: int | None = None
+
+
+INSTAGRAM_SPEC = PostingSpec(posts_per_week=1, drafts_per_run=1)

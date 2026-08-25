@@ -16,6 +16,11 @@ import sys
 from .brand_kernel.loader import load_brand_kernel
 from .config.settings import PilotageSettings
 from .pipelines.base import PlatformPipeline
+from .pipelines.facebook import FacebookPipeline
+from .pipelines.instagram import InstagramPipeline
+from .pipelines.telegram_channel import TelegramChannelPipeline
+from .pipelines.tiktok import TikTokPipeline
+from .pipelines.x import XPipeline
 from .pipelines.youtube import YouTubePipeline
 from .platforms import Platform
 from .shared_calendar.blog_bridge import sync_blog_articles
@@ -31,6 +36,11 @@ EXIT_CONFIG = 2
 #: pipeline lui-même n'a besoin de rien connaître d'ici.
 _PIPELINES: dict[Platform, type[PlatformPipeline]] = {
     Platform.YOUTUBE: YouTubePipeline,
+    Platform.TIKTOK: TikTokPipeline,
+    Platform.INSTAGRAM: InstagramPipeline,
+    Platform.X: XPipeline,
+    Platform.FACEBOOK: FacebookPipeline,
+    Platform.TELEGRAM_CHANNEL: TelegramChannelPipeline,
 }
 
 

@@ -8,10 +8,8 @@ duplication sur les cinq autres plateformes.
 
 from __future__ import annotations
 
-import json
-import re
-
 from ...platforms import Platform
+from ...shared.topic_selection import choose_topic_from_trends
 from ..base import Draft, PlatformPipeline, Topic, TrendItem
 from .watcher import collect_trends
 from .writer import generate_script
@@ -35,17 +33,6 @@ _FALLBACK_TOPICS = (
 )
 
 
-def _extract_json(text: str) -> dict:
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        return {}
-    try:
-        parsed = json.loads(match.group(0))
-    except json.JSONDecodeError:
-        return {}
-    return parsed if isinstance(parsed, dict) else {}
-
-
 class YouTubePipeline(PlatformPipeline):
     """Pipeline pilote : veille (HN/Reddit/dev.to/RSS Tunisie) → sujet → script."""
 
@@ -55,26 +42,9 @@ class YouTubePipeline(PlatformPipeline):
         return collect_trends(offline=self.offline)
 
     def choose_topic(self, trends: list[TrendItem]) -> Topic:
-        if not trends:
-            return _FALLBACK_TOPICS[0]
-
-        best = max(trends, key=lambda item: item.score)
-        response = self.llm.generate(
-            "Tu choisis un sujet de vidéo YouTube pertinent pour une niche IA / "
-            "automatisation / productivité, et tu ne renvoies QUE du JSON.",
-            (
-                f"Signal retenu : {best.title} ({best.source})\n"
-                f"Résumé : {best.summary}\n\n"
-                "Renvoie un JSON avec les clés 'title' (titre accrocheur, en français, "
-                "pour une vidéo YouTube) et 'angle' (une phrase sur l'angle pratique/"
-                "tunisien à adopter)."
-            ),
-            json_mode=True,
+        return choose_topic_from_trends(
+            trends, self.llm, content_kind="vidéo YouTube", fallback=_FALLBACK_TOPICS
         )
-        payload = _extract_json(response.text)
-        title = str(payload.get("title") or best.title)
-        angle = str(payload.get("angle") or "Angle pratique, exemples concrets.")
-        return Topic(title=title, angle=angle, source_url=best.url)
 
     def write(self, topic: Topic) -> Draft:
         return generate_script(topic, self.brand_kernel, self.llm)
