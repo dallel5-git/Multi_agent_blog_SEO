@@ -38,6 +38,7 @@ dev = [
 
 [project.scripts]
 blogseo = "blogseo.interfaces.cli:main"
+pilotage = "pilotage.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
