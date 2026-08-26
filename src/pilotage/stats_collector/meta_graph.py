@@ -13,7 +13,7 @@ inversement — chacune journalise et rend `[]` indépendamment de l'autre.
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import requests
 
@@ -176,8 +176,8 @@ def token_days_remaining(page_access_token: str, *, timeout_s: int = _TIMEOUT_S)
     if not expires_at:  # 0 ou absent = jeton longue durée sans expiration connue
         return None
 
-    expiration = datetime.fromtimestamp(expires_at, tz=timezone.utc)
-    return max(0, (expiration - datetime.now(timezone.utc)).days)
+    expiration = datetime.fromtimestamp(expires_at, tz=UTC)
+    return max(0, (expiration - datetime.now(UTC)).days)
 
 
 #: En dessous de ce seuil, le rappel devient pertinent.

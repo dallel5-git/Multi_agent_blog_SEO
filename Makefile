@@ -3,7 +3,7 @@ PY ?= python3
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: help install install-dev check test lint fmt dry-run offline run index runs graph dashboard dashboard-pilotage scheduler clean
+.PHONY: help install install-dev check test lint fmt dry-run offline offline-pilotage run index runs graph dashboard dashboard-pilotage scheduler clean
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -27,6 +27,9 @@ check: ## Vérifie la configuration et les dépendances
 
 offline: ## Test complet SANS clé API et SANS réseau (recommandé en premier)
 	$(BIN)/blogseo run --dry-run --offline --print
+
+offline-pilotage: ## Test complet du pilotage SANS clé API et SANS réseau
+	$(BIN)/pytest tests/unit/test_pilotage_offline_e2e.py tests/unit/test_bot_conversation_e2e.py -v
 
 dry-run: ## Run complet avec les vrais LLM, mais sans rien publier
 	$(BIN)/blogseo run --dry-run

@@ -6,7 +6,7 @@ Toutes les mesures réseau sont mockées via `monkeypatch.setattr(requests,
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 import requests
 
@@ -198,7 +198,7 @@ def test_instagram_construit_un_snapshot_par_media(calendar_repository, monkeypa
 
 
 def test_token_days_remaining_calcule_les_jours_restants(monkeypatch):
-    expiration = datetime.now(timezone.utc) + timedelta(days=5)
+    expiration = datetime.now(UTC) + timedelta(days=5)
     monkeypatch.setattr(
         requests, "get",
         lambda *a, **k: FakeResponse({"data": {"expires_at": int(expiration.timestamp())}}),
@@ -212,7 +212,7 @@ def test_token_days_remaining_none_sans_expiration_connue(monkeypatch):
 
 
 def test_token_renewal_reminder_silencieux_si_encore_loin(monkeypatch):
-    expiration = datetime.now(timezone.utc) + timedelta(days=30)
+    expiration = datetime.now(UTC) + timedelta(days=30)
     monkeypatch.setattr(
         requests, "get",
         lambda *a, **k: FakeResponse({"data": {"expires_at": int(expiration.timestamp())}}),
@@ -221,7 +221,7 @@ def test_token_renewal_reminder_silencieux_si_encore_loin(monkeypatch):
 
 
 def test_token_renewal_reminder_alerte_si_proche(monkeypatch):
-    expiration = datetime.now(timezone.utc) + timedelta(days=2)
+    expiration = datetime.now(UTC) + timedelta(days=2)
     monkeypatch.setattr(
         requests, "get",
         lambda *a, **k: FakeResponse({"data": {"expires_at": int(expiration.timestamp())}}),

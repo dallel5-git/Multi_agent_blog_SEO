@@ -335,6 +335,8 @@ blogseo series show <series_id>           # détail d'une série
 - [x] Génération automatique d'un post LinkedIn/X à partir de l'article (Social Writer, agent 9)
 - [x] Tableau de bord HTML local des runs
 - [x] Mode « série » : plusieurs articles liés entre eux, maillage interne croisé (issue #41)
+- [x] Mode « refresh » : régénération ciblée titre/description des articles sous-performants (issue #42)
+- [x] Lot 7 du pilotage multi-plateformes : tests bout-en-bout hors ligne et simulation conversationnelle (`make offline-pilotage`, issues #81-#84)
 
 ### À faire (backlog GitHub)
 

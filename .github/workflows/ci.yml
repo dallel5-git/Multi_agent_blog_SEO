@@ -142,3 +142,12 @@ jobs:
           }
           echo "✔ Brouillon généré :"
           ls -la storage/drafts/
+
+      - name: Pilotage complet sans clé ni réseau
+        env:
+          PILOTAGE_DB_PATH: ${{ github.workspace }}/.ci-calendar.db
+        run: |
+          pilotage migrate
+          for platform in youtube tiktok instagram x facebook telegram; do
+            pilotage run "$platform" --offline
+          done

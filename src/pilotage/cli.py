@@ -187,6 +187,15 @@ def cmd_run(settings: PilotageSettings, platform_name: str, *, offline: bool) ->
     try:
         pipeline = pipeline_cls(repository=repository, offline=offline)
         item_id = pipeline.run()
+
+        # Transition drafted → pending_review (ARCHITECTURE.md §4) : au
+        # mieux, jamais bloquant — un pipeline doit tourner même sans bot
+        # configuré (issue #57, critère « aucune source morte... »).
+        bot_factory = _BOT_FACTORIES.get(platform)
+        if bot_factory is not None:
+            bot = bot_factory(settings, repository)
+            if bot.is_configured():
+                bot.notify_pending_drafts()
     finally:
         repository.close()
 

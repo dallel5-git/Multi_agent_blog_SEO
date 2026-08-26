@@ -7,9 +7,11 @@ name = "blogseo-agents"
 version = "1.0.0"
 description = "Système multi-agents (LangGraph) de génération d'articles de blog SEO — 100 % free tier"
 readme = "README.md"
-# 3.10 suffit : le code n'utilise aucune nouveauté 3.11 (pas de StrEnum,
-# pas de typing.Self, pas de datetime.UTC). Vérifié sur Ubuntu 22.04.
-requires-python = ">=3.10"
+# 3.11 minimum : plusieurs modules de blogseo (sources/, domain/entities/,
+# interfaces/dashboard.py) importent `datetime.UTC`, qui n'existe qu'à partir
+# de 3.11 — la collecte des tests échoue à l'import sur 3.10 (issue #84 du
+# lot pilotage). La CI ne teste d'ailleurs que 3.11 et 3.12.
+requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Oussama Dallel" }]
 keywords = ["seo", "multi-agents", "langgraph", "blog", "automation", "tunisia"]
@@ -54,7 +56,7 @@ markers = [
 
 [tool.ruff]
 line-length = 110
-target-version = "py310"
+target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
@@ -70,5 +72,5 @@ ignore = [
 ]
 
 [tool.coverage.run]
-source = ["src/blogseo"]
+source = ["src/blogseo", "src/pilotage"]
 omit = ["*/__init__.py"]

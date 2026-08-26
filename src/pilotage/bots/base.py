@@ -295,7 +295,32 @@ class PilotageBot:
             ]]
         }
 
+    def notify_pending_drafts(self) -> int:
+        """Envoie chaque brouillon fraîchement écrit (`status='drafted'`) avec
+        son clavier de décision, et le fait passer à `pending_review`.
+
+        C'est la transition `drafted → pending_review: envoyé au bot
+        Telegram` du cycle de vie (ARCHITECTURE.md §4) : `submit()` du
+        pipeline (lot 3) persiste en `drafted` sans jamais parler à
+        Telegram — un pipeline ne doit pas échouer si le bot n'est pas
+        configuré. C'est ici, côté bot, que le brouillon est effectivement
+        envoyé pour revue. Renvoie le nombre de brouillons envoyés.
+        """
+        drafts = [
+            item for item in self.repository.list_by_platform(self.platform)
+            if item.status is ContentStatus.DRAFTED
+        ]
+        for item in drafts:
+            self.send_message(
+                f"<b>#{item.id} — {item.title}</b>\n\n{_truncate(item.body or '', 3500)}",
+                reply_markup=self._decision_keyboard(item.id),
+            )
+            self.repository.update_status(item.id, ContentStatus.PENDING_REVIEW)
+        return len(drafts)
+
     def _cmd_en_attente(self) -> None:
+        """Reliste ce qui attend déjà une décision (`pending_review`) — pour
+        pousser les brouillons tout juste écrits, voir `notify_pending_drafts()`."""
         items = [
             item for item in self.repository.list_by_platform(self.platform)
             if item.status is ContentStatus.PENDING_REVIEW
