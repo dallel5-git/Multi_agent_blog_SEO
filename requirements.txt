@@ -27,5 +27,8 @@ apscheduler>=3.10           # cron local toutes les 48 h
 Pillow>=10.0                # image de secours si Pollinations.ai est indisponible
                             # (Pollinations lui-même est une simple requête GET)
 
+# --- Tableau de bord du pilotage (lecture seule, 100 % local) ---------------
+streamlit>=1.35             # seule dépendance ajoutée par le pilotage multi-plateformes
+
 # --- Développement (optionnel) ----------------------------------------------
 # pip install -r requirements-dev.txt

@@ -3,7 +3,7 @@ PY ?= python3
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: help install install-dev check test lint fmt dry-run offline run index runs graph dashboard scheduler clean
+.PHONY: help install install-dev check test lint fmt dry-run offline run index runs graph dashboard dashboard-pilotage scheduler clean
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -48,6 +48,9 @@ dashboard: ## Génère le tableau de bord HTML local et l'ouvre dans le navigate
 
 scheduler: ## Démarre le planificateur local (toutes les 48 h)
 	$(BIN)/python -m blogseo.interfaces.scheduler
+
+dashboard-pilotage: ## Tableau de bord Streamlit du pilotage (lecture seule)
+	$(BIN)/streamlit run src/pilotage/dashboard/app.py
 
 test: ## Lance les tests unitaires
 	$(BIN)/pytest -v

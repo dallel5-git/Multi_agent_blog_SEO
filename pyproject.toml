@@ -27,6 +27,7 @@ dependencies = [
     "chromadb>=0.5",
     "apscheduler>=3.10",
     "Pillow>=10.0",
+    "streamlit>=1.35",
 ]
 
 [project.optional-dependencies]

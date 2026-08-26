@@ -218,6 +218,16 @@ class CalendarRepository:
         ).fetchone()
         return _row_to_stat_snapshot(row) if row else None
 
+    def list_snapshots(self, platform: Platform) -> list[StatSnapshot]:
+        """Historique complet des mesures de `platform`, triées par date de
+        capture — utilisé pour tracer une courbe (tableau de bord, lot 6),
+        pas juste la dernière valeur connue (`latest_snapshot`)."""
+        rows = self._connection.execute(
+            "SELECT * FROM stat_snapshots WHERE platform = ? ORDER BY captured_at ASC",
+            (platform.value,),
+        ).fetchall()
+        return [_row_to_stat_snapshot(row) for row in rows]
+
     # ----------------------------------------------------------------- #
     # Mention croisée — toujours SUGGÉRÉE, jamais imposée (ARCHITECTURE.md §3)
     # ----------------------------------------------------------------- #
