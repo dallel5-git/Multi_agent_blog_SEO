@@ -340,3 +340,66 @@ def test_compose_manual_stats_reminder_renvoie_none_sans_publication_a_relancer(
 ):
     bot = make_bot(FakeSession(), calendar_repository, platform=Platform.TIKTOK, tmp_path=tmp_path)
     assert bot.compose_manual_stats_reminder() is None
+
+
+def test_compose_manual_stats_reminder_ignore_les_plateformes_avec_api(calendar_repository, tmp_path):
+    """YouTube a une API automatique (lot 5) : jamais de rappel de saisie
+    manuelle pour cette plateforme, même sans mesure enregistrée."""
+    item_id = calendar_repository.add_item(ContentItem(platform=Platform.YOUTUBE, title="T"))
+    calendar_repository.add_post(
+        PlatformPost(content_item_id=item_id, platform=Platform.YOUTUBE,
+                     url="https://youtu.be/abc", published_at="2026-08-25")
+    )
+    bot = make_bot(FakeSession(), calendar_repository, platform=Platform.YOUTUBE, tmp_path=tmp_path)
+
+    assert bot.compose_manual_stats_reminder() is None
+
+
+# --------------------------------------------------------------------------- #
+# /mesure, /passe, /rappel_stats (lot 5, issue #76)
+# --------------------------------------------------------------------------- #
+def test_mesure_enregistre_une_mesure_manuelle(calendar_repository, tmp_path):
+    item_id = calendar_repository.add_item(ContentItem(platform=Platform.X, title="T"))
+    post_id = calendar_repository.add_post(
+        PlatformPost(content_item_id=item_id, platform=Platform.X,
+                     url="https://x.com/a/status/1", published_at="2026-08-25")
+    )
+    bot = make_bot(FakeSession(), calendar_repository, platform=Platform.X, tmp_path=tmp_path)
+
+    bot._handle_message(message_update(1, f"/mesure {post_id} 250 12")["message"])
+
+    mesure = calendar_repository.latest_snapshot(post_id)
+    assert mesure is not None
+    assert mesure.views == 250
+    assert mesure.likes == 12
+    assert mesure.source.value == "manual"
+
+
+def test_mesure_sans_arguments_rappelle_lusage(calendar_repository, tmp_path):
+    session = FakeSession()
+    bot = make_bot(session, calendar_repository, platform=Platform.X, tmp_path=tmp_path)
+
+    bot._handle_message(message_update(1, "/mesure")["message"])
+
+    send = session.calls_for("sendMessage")[0]
+    assert "Usage" in send["text"]
+
+
+def test_passe_repond_sans_rien_ecrire_en_base(calendar_repository, tmp_path):
+    session = FakeSession()
+    bot = make_bot(session, calendar_repository, platform=Platform.TIKTOK, tmp_path=tmp_path)
+
+    bot._handle_message(message_update(1, "/passe 42")["message"])
+
+    send = session.calls_for("sendMessage")[0]
+    assert "42" in send["text"]
+
+
+def test_rappel_stats_previent_quand_il_ny_a_rien_a_signaler(calendar_repository, tmp_path):
+    session = FakeSession()
+    bot = make_bot(session, calendar_repository, platform=Platform.X, tmp_path=tmp_path)
+
+    bot._handle_message(message_update(1, "/rappel_stats")["message"])
+
+    send = session.calls_for("sendMessage")[0]
+    assert "Rien à rappeler" in send["text"]

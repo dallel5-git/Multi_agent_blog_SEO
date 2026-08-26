@@ -34,6 +34,7 @@ import requests
 from ..platforms import Platform
 from ..shared_calendar.models import ContentStatus, PlatformPost
 from ..shared_calendar.repository import CalendarRepository
+from ..stats_collector.manual_entry import posts_needing_manual_entry, record_manual_measurement
 
 logger = logging.getLogger(__name__)
 
@@ -210,6 +211,9 @@ class PilotageBot:
             "/stats": lambda: self._cmd_stats(),
             "/publie": lambda: self._cmd_publie(arguments),
             "/corrige": lambda: self._cmd_corrige(arguments),
+            "/rappel_stats": lambda: self._cmd_rappel_stats(),
+            "/mesure": lambda: self._cmd_mesure(arguments),
+            "/passe": lambda: self._cmd_passe(arguments),
         }
         handler = routes.get(commande)
         if handler is None:
@@ -384,24 +388,51 @@ class PilotageBot:
     # ici : ce module n'ouvre aucune boucle de planification. Un timer
     # systemd ou un cron externe appelle `pilotage remind-stats <plateforme>`
     # (voir cli.py), sur le modèle de `scripts/install_systemd_timer.sh`.
+    #
+    # Une question à la fois, jamais un formulaire : le rappel liste les
+    # publications concernées avec leur id, l'auteur répond au fil de l'eau
+    # avec `/mesure <id> <vues> [likes]` ou `/passe <id>` (lot 5, risque n°4).
     # ------------------------------------------------------------------ #
     def compose_manual_stats_reminder(self) -> str | None:
-        posts_sans_mesure = [
-            post for post in self.repository.list_recent_posts(limit=100)
-            if post.platform is self.platform and self.repository.latest_snapshot(post.id) is None
-        ]
-        if not posts_sans_mesure:
+        posts = posts_needing_manual_entry(self.repository, self.platform)
+        if not posts:
             return None
-        lignes = "\n".join(f"• {post.url}" for post in posts_sans_mesure)
+        lignes = "\n".join(f"• #{post.id} — {post.url}" for post in posts)
         return (
-            "📊 Rappel hebdomadaire — aucune mesure saisie pour :\n"
-            f"{lignes}\n\nRéponds avec les chiffres quand tu as un moment."
+            "📊 Rappel — aucune mesure saisie pour :\n"
+            f"{lignes}\n\n"
+            "Réponds publication par publication : /mesure <id> <vues> [likes], "
+            "ou /passe <id> pour ignorer celle-ci sans bloquer les autres."
         )
 
     def send_manual_stats_reminder(self) -> None:
         message = self.compose_manual_stats_reminder()
         if message is not None:
             self.send_message(message)
+
+    def _cmd_rappel_stats(self) -> None:
+        message = self.compose_manual_stats_reminder()
+        self.send_message(message or "Rien à rappeler : toutes les publications ont une mesure récente.")
+
+    def _cmd_mesure(self, arguments: list[str]) -> None:
+        if len(arguments) < 2 or not arguments[0].isdigit() or not arguments[1].isdigit():
+            self.send_message("Usage : /mesure <id> <vues> [likes]")
+            return
+
+        post_id = int(arguments[0])
+        views = int(arguments[1])
+        likes = int(arguments[2]) if len(arguments) >= 3 and arguments[2].isdigit() else None
+
+        record_manual_measurement(
+            self.repository, platform_post_id=post_id, platform=self.platform, views=views, likes=likes
+        )
+        self.send_message(f"✅ Mesure enregistrée pour #{post_id} ({views} vues).")
+
+    def _cmd_passe(self, arguments: list[str]) -> None:
+        if not arguments or not arguments[0].isdigit():
+            self.send_message("Usage : /passe <id>")
+            return
+        self.send_message(f"⏭ #{arguments[0]} ignoré pour cette fois — repassera au prochain rappel.")
 
 
 def create_bot_for_platform(

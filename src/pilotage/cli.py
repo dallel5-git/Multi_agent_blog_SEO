@@ -9,12 +9,17 @@ Commandes disponibles :
     pilotage bot <plateforme>       Démarre le bot de pilotage (boucle infinie)
     pilotage remind-stats <plateforme>
                                      Envoie le rappel de saisie manuelle (TikTok, X)
+    pilotage collect-stats <plateforme>
+                                     Collecte les statistiques automatiques (YouTube, Meta, Telegram)
+    pilotage check-meta-token       Vérifie l'échéance du jeton Meta
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Callable
+from datetime import date
 
 from .bots.base import PilotageBot
 from .bots.facebook import create_bot as create_facebook_bot
@@ -36,6 +41,14 @@ from .platforms import Platform
 from .shared_calendar.blog_bridge import sync_blog_articles
 from .shared_calendar.migrate import apply_schema
 from .shared_calendar.repository import CalendarRepository
+from .stats_collector.base import StatsCollector
+from .stats_collector.meta_graph import (
+    FacebookStatsCollector,
+    InstagramStatsCollector,
+    token_renewal_reminder,
+)
+from .stats_collector.telegram_api import TelegramChannelStatsCollector
+from .stats_collector.youtube_api import YouTubeStatsCollector
 
 EXIT_OK = 0
 EXIT_ERROR = 1
@@ -63,6 +76,27 @@ _BOT_FACTORIES = {
     Platform.TELEGRAM_CHANNEL: create_telegram_channel_bot,
 }
 
+#: X et TikTok n'ont volontairement aucune entrée : aucune API gratuite,
+#: la collecte passe par les commandes `/mesure` et `/passe` des bots (lot 5).
+_COLLECTOR_FACTORIES: dict[Platform, Callable[[PilotageSettings, CalendarRepository], StatsCollector]] = {
+    Platform.YOUTUBE: lambda settings, repository: YouTubeStatsCollector(
+        repository, api_key=settings.youtube.api_key
+    ),
+    Platform.FACEBOOK: lambda settings, repository: FacebookStatsCollector(
+        repository, page_access_token=settings.meta.page_access_token, page_id=settings.meta.page_id
+    ),
+    Platform.INSTAGRAM: lambda settings, repository: InstagramStatsCollector(
+        repository,
+        page_access_token=settings.meta.page_access_token,
+        ig_business_id=settings.meta.instagram_business_id,
+    ),
+    Platform.TELEGRAM_CHANNEL: lambda settings, repository: TelegramChannelStatsCollector(
+        repository,
+        bot_token=settings.bots.for_platform(Platform.TELEGRAM_CHANNEL).bot_token,
+        channel_username=settings.telegram_channel.channel_username,
+    ),
+}
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -88,6 +122,13 @@ def build_parser() -> argparse.ArgumentParser:
         "remind-stats", help="Envoie le rappel de saisie manuelle des statistiques"
     )
     remind_cmd.add_argument("platform", choices=[p.value for p in _BOT_FACTORIES])
+
+    collect_cmd = sub.add_parser(
+        "collect-stats", help="Collecte les statistiques automatiques d'une plateforme"
+    )
+    collect_cmd.add_argument("platform", choices=[p.value for p in _COLLECTOR_FACTORIES])
+
+    sub.add_parser("check-meta-token", help="Vérifie l'échéance du jeton Meta")
 
     return parser
 
@@ -193,6 +234,34 @@ def cmd_remind_stats(settings: PilotageSettings, platform_name: str) -> int:
         repository.close()
 
 
+def cmd_collect_stats(settings: PilotageSettings, platform_name: str) -> int:
+    platform = Platform(platform_name)
+    factory = _COLLECTOR_FACTORIES[platform]
+
+    repository = CalendarRepository(settings.calendar.db_path)
+    try:
+        collector = factory(settings, repository)
+        count = collector.run(date.today())
+    finally:
+        repository.close()
+
+    print(f"✅ {count} mesure(s) enregistrée(s) pour {platform.label}.")
+    return EXIT_OK
+
+
+def cmd_check_meta_token(settings: PilotageSettings) -> int:
+    if not settings.meta.page_access_token:
+        print("✖ META_PAGE_ACCESS_TOKEN absent — rien à vérifier.")
+        return EXIT_CONFIG
+
+    message = token_renewal_reminder(settings.meta.page_access_token)
+    if message is None:
+        print("✅ Jeton Meta valide, pas de renouvellement urgent.")
+        return EXIT_OK
+    print(message)
+    return EXIT_OK
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     settings = PilotageSettings.from_env()
@@ -209,6 +278,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_bot(settings, args.platform, once=args.once)
     if args.command == "remind-stats":
         return cmd_remind_stats(settings, args.platform)
+    if args.command == "collect-stats":
+        return cmd_collect_stats(settings, args.platform)
+    if args.command == "check-meta-token":
+        return cmd_check_meta_token(settings)
 
     return EXIT_ERROR
 
