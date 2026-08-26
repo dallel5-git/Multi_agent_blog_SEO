@@ -66,3 +66,34 @@ class ImageGeneratorPort(ABC):
     @abstractmethod
     def generate(self, prompt: str, *, slug: str, width: int = 1280, height: int = 720) -> Path | None:
         """Génère et enregistre l'image. Renvoie None si l'API échoue (image de secours utilisée)."""
+
+
+@dataclass(frozen=True, slots=True)
+class ExistingArticle:
+    """Article déjà publié, relu depuis le disque pour un refresh ciblé (issue #42)."""
+
+    slug: str
+    title: str
+    description: str
+    category: str
+    body_markdown: str
+
+
+class ArticleRefreshPort(ABC):
+    """Relit un article publié et n'en réécrit que le titre/la description.
+
+    Le corps n'est jamais modifié : un article avec beaucoup d'impressions et
+    peu de clics a un problème de titre/description, pas de fond (issue #42).
+    """
+
+    @abstractmethod
+    def read(self, slug: str) -> ExistingArticle | None:
+        """Relit l'article publié. `None` si le slug est introuvable."""
+
+    @abstractmethod
+    def update_metadata(self, slug: str, *, title: str, description: str) -> Path | None:
+        """Réécrit uniquement `title`/`description` dans le frontmatter, en place.
+
+        Ne touche ni au corps, ni au nom de fichier (donc ni au slug, ni à
+        l'URL). Renvoie le chemin modifié, ou `None` si le slug est introuvable.
+        """

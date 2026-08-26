@@ -8,15 +8,9 @@ conforme ne sort de cet agent.
 from __future__ import annotations
 
 from ...domain.ports.llm import LLMPort
-from ...domain.value_objects.seo_metadata import (
-    DESCRIPTION_MAX,
-    DESCRIPTION_MIN,
-    TITLE_MAX,
-    SeoMetadata,
-    contains_keyword,
-)
+from ...domain.value_objects.seo_metadata import SeoMetadata
 from ...domain.value_objects.slug import Slug
-from ...shared.text import truncate
+from ...shared.seo_text import fix_meta_description, fix_meta_title
 from ..dto.pipeline_state import PipelineState
 from ..prompts.reviewing import SEO_EDITOR_SYSTEM, seo_editor_user_prompt
 from .base import Agent
@@ -95,40 +89,12 @@ class SeoEditorAgent(Agent):
         return state
 
     # ------------------------------------------------------------------ #
-    @staticmethod
-    def _fix_title(title: str, focus: str) -> str:
-        """Garantit un meta title exploitable : mot-clé présent et longueur bornée.
-
-        Priorité au sens : on ne remplace jamais un titre lisible par le seul
-        mot-clé. Si le préfixage ne tient pas dans les 60 caractères, on garde
-        le titre d'origine tronqué et le Quality Gate émettra un avertissement.
-        """
-        title = title.strip().strip('"').rstrip(".")
-        if not contains_keyword(title, focus):
-            candidate = f"{focus.capitalize()} : {title}"
-            if len(candidate) <= TITLE_MAX:
-                return candidate
-        return truncate(title, TITLE_MAX, suffix="")
-
-    @staticmethod
-    def _fix_description(description: str, focus: str, body: str) -> str:
-        """Complète ou tronque la description pour rester dans la fenêtre Google."""
-        description = " ".join(description.split()).strip().strip('"')
-
-        if len(description) < DESCRIPTION_MIN:
-            # On complète avec le début du corps, nettoyé de son Markdown.
-            filler = " ".join(
-                line.strip("#* ") for line in body.splitlines()
-                if line.strip() and not line.strip().startswith(("#", "`", "<", "-"))
-            )
-            description = (description + " " + filler).strip()
-
-        if not contains_keyword(description, focus):
-            description = f"{focus.capitalize()} : {description}"
-
-        if len(description) > DESCRIPTION_MAX:
-            description = truncate(description, DESCRIPTION_MAX, suffix="")
-        return description.rstrip(" ,;:").rstrip(".") + "."
+    # `_fix_title`/`_fix_description` vivent dans `shared/seo_text.py`,
+    # partagées avec le refresh ciblé (issue #42) : même règle de longueur et
+    # de présence du mot-clé, qu'on génère le titre pour la première fois ou
+    # qu'on le régénère.
+    _fix_title = staticmethod(fix_meta_title)
+    _fix_description = staticmethod(fix_meta_description)
 
     @staticmethod
     def _fix_slug(raw, meta_title: str, existing_slugs: list[str]) -> Slug:

@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass, field, replace
 from datetime import date
 
+from ...shared.text import quote_yaml_scalar as _yaml_quote
 from ..value_objects.category import Category
 from ..value_objects.seo_metadata import SeoMetadata
 from ..value_objects.slug import Slug
@@ -18,11 +19,6 @@ from ..value_objects.slug import Slug
 # Le blog rend le MDX : les guillemets doubles dans le frontmatter doivent être échappés.
 _HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 _CODE_FENCE_PATTERN = re.compile(r"^```[\w-]*\s*$", re.MULTILINE)
-
-
-def _yaml_quote(value: str) -> str:
-    """Échappe une chaîne pour un scalaire YAML entre guillemets doubles."""
-    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 @dataclass(slots=True)

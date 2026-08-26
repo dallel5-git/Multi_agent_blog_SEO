@@ -43,6 +43,7 @@ from ..notifications.telegram import NullNotifier, TelegramBot
 from ..persistence.json_run_repository import JsonRunRepository
 from ..persistence.json_series_repository import JsonSeriesRepository
 from ..persistence.mdx_article_source import MdxArticleSource
+from ..publishing.article_refresher import MdxArticleRefresher
 from ..publishing.git_publisher import GitPublisher
 from ..publishing.mdx_writer import MdxArticleWriter
 from ..publishing.series_linker import SeriesBacklinkWriter
@@ -218,6 +219,10 @@ class Container:
     @cached_property
     def series_linker(self) -> SeriesBacklinkWriter:
         return SeriesBacklinkWriter(self.settings.publishing.blog_content_dir)
+
+    @cached_property
+    def article_refresher(self) -> MdxArticleRefresher:
+        return MdxArticleRefresher(self.settings.publishing.blog_content_dir)
 
     @cached_property
     def analytics(self) -> AnalyticsPort:

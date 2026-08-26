@@ -11,14 +11,13 @@ laisser un `.mdx` à moitié écrit que Next.js essaierait de builder.
 from __future__ import annotations
 
 import logging
-import os
-import tempfile
 from datetime import date
 from pathlib import Path
 
 from ...domain.entities.article import Article
 from ...domain.errors import PublicationError
 from ...domain.ports.publishing import ArticleWriterPort, WriteResult
+from ...shared.atomic_write import atomic_write_text
 
 logger = logging.getLogger(__name__)
 
@@ -52,21 +51,10 @@ class MdxArticleWriter(ArticleWriterPort):
 
         content = article.to_mdx()
         try:
-            self._atomic_write(path, content)
+            atomic_write_text(path, content)
         except OSError as exc:
             raise PublicationError(f"Écriture impossible de {path} : {exc}") from exc
 
         size = len(content.encode("utf-8"))
         logger.info("Article écrit : %s (%s octets, %s mots)", path, size, article.word_count)
         return WriteResult(path=path, bytes_written=size, overwritten=existed and overwrite)
-
-    @staticmethod
-    def _atomic_write(path: Path, content: str) -> None:
-        handle, tmp_name = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
-        try:
-            with os.fdopen(handle, "w", encoding="utf-8") as file:
-                file.write(content)
-            os.replace(tmp_name, path)
-        except BaseException:
-            Path(tmp_name).unlink(missing_ok=True)
-            raise

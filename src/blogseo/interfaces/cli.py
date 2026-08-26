@@ -13,6 +13,7 @@ Commandes disponibles :
     blogseo series start   Planifie une série de 3 à 5 articles liés
     blogseo series list    Liste les séries planifiées
     blogseo series show    Détaille une série
+    blogseo refresh <slug> Régénère le titre/la description d'un article sous-performant
 """
 
 from __future__ import annotations
@@ -24,7 +25,8 @@ from pathlib import Path
 
 from ..application.dto.pipeline_state import PipelineState
 from ..application.use_cases.generate_article import GenerateArticleUseCase
-from ..domain.entities.pipeline_run import PipelineRun, RunStatus
+from ..application.use_cases.refresh_article import ArticleNotFoundError, RefreshArticleUseCase
+from ..domain.entities.pipeline_run import Decision, PipelineRun, RunStatus
 from ..infrastructure.config.container import Container
 from ..infrastructure.config.logging_config import setup_logging
 from ..infrastructure.config.settings import Settings
@@ -93,6 +95,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     series_show = series_sub.add_parser("show", help="Détaille une série")
     series_show.add_argument("series_id")
+
+    refresh_cmd = sub.add_parser(
+        "refresh", help="Régénère le titre/la description d'un article sous-performant (issue #42)"
+    )
+    refresh_cmd.add_argument("slug", help="Slug de l'article publié à régénérer")
+    refresh_cmd.add_argument("--offline", action="store_true",
+                             help="Aucun appel réseau : LLM factice, pas de Telegram")
 
     return parser
 
@@ -296,6 +305,48 @@ def cmd_series_show(container: Container, series_id: str) -> int:
     return EXIT_OK
 
 
+def cmd_refresh(container: Container, slug: str) -> int:
+    settings = container.settings
+    use_case = RefreshArticleUseCase(
+        container.llm,
+        refresher=container.article_refresher,
+        analytics=container.analytics,
+        notifier=container.telegram,
+        reviewer=container.telegram,
+        human_review=settings.human_review,
+        review_timeout_s=settings.telegram.review_timeout_s,
+        default_on_timeout=(
+            Decision.APPROVE if settings.telegram.default_on_timeout == "approve" else Decision.REJECT
+        ),
+        git=container.git,
+        commit_prefix=settings.publishing.commit_prefix,
+    )
+
+    try:
+        result = use_case.execute(slug)
+    except ArticleNotFoundError as exc:
+        print(f"✖ {exc}")
+        return EXIT_ERROR
+
+    print("\n" + "═" * 78)
+    print(f"RÉGÉNÉRATION — {slug}")
+    print("═" * 78)
+    print(f"  Titre       : {result.old_title}")
+    print(f"              → {result.new_title}")
+    print(f"  Description : {result.old_description}")
+    print(f"              → {result.new_description}")
+    if result.applied:
+        print(f"  Fichier mis à jour sur place : {result.path}")
+        if result.commit_sha:
+            print(f"  Commit                       : {result.commit_sha}")
+    else:
+        decision = result.decision.value if result.decision else "aucune décision"
+        print(f"  Aucune modification appliquée (décision : {decision}).")
+    print("═" * 78 + "\n")
+
+    return EXIT_OK
+
+
 def cmd_run(container: Container, args) -> int:
     use_case = GenerateArticleUseCase(
         container.orchestrator,
@@ -385,6 +436,8 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_series_show(container, args.series_id)
     if args.command == "run":
         return cmd_run(container, args)
+    if args.command == "refresh":
+        return cmd_refresh(container, args.slug)
 
     return EXIT_ERROR
 

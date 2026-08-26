@@ -57,3 +57,13 @@ def escape_markdown_v2(text: str) -> str:
 
 def word_count(text: str) -> int:
     return len(re.findall(r"\b[\wÀ-ÿ'-]+\b", strip_code_blocks(text)))
+
+
+def quote_yaml_scalar(value: str) -> str:
+    """Échappe une chaîne pour un scalaire YAML entre guillemets doubles.
+
+    Partagé entre `Article.to_frontmatter()` et le refresh ciblé (issue #42) :
+    les deux écrivent des lignes de frontmatter et doivent échapper à l'identique
+    pour que la relecture (`parse_frontmatter`) reste symétrique.
+    """
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
