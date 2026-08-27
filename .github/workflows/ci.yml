@@ -148,6 +148,6 @@ jobs:
           PILOTAGE_DB_PATH: ${{ github.workspace }}/.ci-calendar.db
         run: |
           pilotage migrate
-          for platform in youtube tiktok instagram x facebook telegram; do
+          for platform in youtube tiktok instagram x facebook telegram_channel; do
             pilotage run "$platform" --offline
           done
