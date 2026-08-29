@@ -192,10 +192,10 @@ class QualityGateAgent(Agent):
                 message="Un bloc de code n'est pas fermé (nombre impair de ```), le rendu MDX casserait.",
             ),
             QualityCheck(
-                name="presence_code_ou_liste",
-                passed="```" in article.body_markdown or "\n- " in article.body_markdown,
-                severity=Severity.WARNING,
-                message="Aucun bloc de code ni liste : ajoutez un exemple concret ou une liste d'étapes.",
+                name="absence_code",
+                passed="```" not in article.body_markdown and "`" not in article.body_markdown,
+                severity=Severity.BLOCKER,
+                message="L'article contient du code ou du code inline. Il doit rester lisible et orienté idées, sans snippets techniques.",
             ),
         ]
 

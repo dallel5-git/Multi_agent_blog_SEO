@@ -29,9 +29,9 @@ Le **corps** de l'article en Markdown, et rien d'autre.
    Pas de « Dans cet article, nous allons voir… ».
 2. 4 à 7 sections `##`, chacune de 150 à 350 mots.
 3. Des sous-sections `###` quand une section devient dense.
-4. Au moins un bloc de code fonctionnel et commenté **en français**, avec le
-   langage précisé (```python, ```bash, ```json…).
-5. Au moins une liste à puces ou numérotée.
+4. Zéro bloc de code. L'article doit rester lisible, narratif et orienté idées,
+   avec des conseils concrets et des exemples de stratégie, pas des snippets.
+5. Des listes à puces ou numérotées uniquement si elles servent à clarifier une idée.
 6. Une section finale d'appel à l'action.
 
 ## Composants MDX disponibles (le site les rend nativement)

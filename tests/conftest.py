@@ -45,12 +45,6 @@ Ce guide montre comment gérer sa prospection avec n8n sans dépenser un dinar.
 
 {filler}
 
-```python
-# Exemple minimal commenté en français
-def run() -> str:
-    return "ok"
-```
-
 ## Construire le workflow de prospection
 
 {filler}

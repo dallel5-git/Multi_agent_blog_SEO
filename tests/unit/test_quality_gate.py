@@ -81,6 +81,12 @@ class TestStructure:
         assert not _check(state, "blocs_de_code_equilibres").passed
         assert not state.quality.approved
 
+    def test_bloc_de_code_est_bloquant(self, gate, state):
+        state.article.body_markdown += "\n\n```python\nprint('exemple technique')\n```"
+        gate.run(state)
+        assert not _check(state, "absence_code").passed
+        assert not state.quality.approved
+
     def test_pas_assez_de_sections_est_bloquant(self, gate, state):
         state.article.body_markdown = state.article.body_markdown.replace("## ", "### ")
         gate.run(state)
