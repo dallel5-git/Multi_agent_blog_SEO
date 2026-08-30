@@ -197,6 +197,71 @@ def test_en_attente_vide_previent_plutot_que_de_ne_rien_dire(calendar_repository
 
 
 # --------------------------------------------------------------------------- #
+# Génération à la demande (/generer)
+# --------------------------------------------------------------------------- #
+def test_generer_sans_callback_previent_que_ce_nest_pas_disponible(calendar_repository, tmp_path):
+    session = FakeSession(updates_batches=[[message_update(1, "/generer")]])
+    bot = make_bot(session, calendar_repository, tmp_path=tmp_path)
+
+    bot.poll_once()
+
+    assert "non disponible" in session.calls_for("sendMessage")[0]["text"]
+
+
+def test_generer_appelle_le_callback_et_envoie_le_brouillon_produit(calendar_repository, tmp_path):
+    session = FakeSession(updates_batches=[[message_update(1, "/generer")]])
+    bot = make_bot(session, calendar_repository, tmp_path=tmp_path)
+
+    def fake_generate() -> int:
+        item_id = calendar_repository.add_item(
+            ContentItem(platform=Platform.YOUTUBE, title="Script généré", body="Le script complet.")
+        )
+        calendar_repository.update_status(item_id, ContentStatus.DRAFTED)
+        return item_id
+
+    bot.generate_callback = fake_generate
+    bot.poll_once()
+
+    textes = [call["text"] for call in session.calls_for("sendMessage")]
+    assert any("Génération" in t for t in textes)
+    assert any("Script généré" in t and "Le script complet." in t for t in textes)
+
+
+def test_generer_dont_le_callback_leve_previent_sans_planter(calendar_repository, tmp_path):
+    session = FakeSession(updates_batches=[[message_update(1, "/generer")]])
+    bot = make_bot(session, calendar_repository, tmp_path=tmp_path)
+
+    def failing_generate() -> int:
+        raise RuntimeError("LLM injoignable")
+
+    bot.generate_callback = failing_generate
+    bot.poll_once()  # ne doit jamais lever
+
+    assert "impossible" in session.calls_for("sendMessage")[-1]["text"]
+
+
+def test_run_forever_envoie_le_clavier_de_generation_si_callback_cable(calendar_repository, tmp_path):
+    session = FakeSession(updates_batches=[])
+    bot = make_bot(session, calendar_repository, tmp_path=tmp_path)
+    bot.generate_callback = lambda: 1
+
+    class _StopAfterFirstPoll(Exception):
+        pass
+
+    def fake_poll_once(*args, **kwargs):
+        raise _StopAfterFirstPoll
+
+    bot.poll_once = fake_poll_once  # coupe la boucle infinie après le message de démarrage
+    try:
+        bot.run_forever()
+    except _StopAfterFirstPoll:
+        pass
+
+    send = session.calls_for("sendMessage")[0]
+    assert "/generer" in send["reply_markup"]["keyboard"][0][0]["text"]
+
+
+# --------------------------------------------------------------------------- #
 # Boutons ✅ ✏️ ❌
 # --------------------------------------------------------------------------- #
 def test_bouton_approve_passe_le_statut_a_approved_et_retire_le_clavier(calendar_repository, tmp_path):

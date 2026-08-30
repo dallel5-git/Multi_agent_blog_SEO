@@ -205,7 +205,14 @@ def cmd_run(settings: PilotageSettings, platform_name: str, *, offline: bool) ->
 
 def _make_bot(settings: PilotageSettings, platform_name: str, repository: CalendarRepository) -> PilotageBot:
     platform = Platform(platform_name)
-    return _BOT_FACTORIES[platform](settings, repository)
+    bot = _BOT_FACTORIES[platform](settings, repository)
+    pipeline_cls = _PIPELINES.get(platform)
+    if pipeline_cls is not None:
+        def _generate() -> int:
+            return pipeline_cls(repository=repository, offline=False).run()
+
+        bot.generate_callback = _generate
+    return bot
 
 
 def cmd_bot(settings: PilotageSettings, platform_name: str, *, once: bool) -> int:

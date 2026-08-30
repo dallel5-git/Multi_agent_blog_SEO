@@ -25,6 +25,7 @@ import json
 import logging
 import sqlite3
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -40,6 +41,15 @@ logger = logging.getLogger(__name__)
 
 _API = "https://api.telegram.org/bot{token}/{method}"
 _CALLBACK_PREFIX = "pilotage"
+
+#: Clavier persistant affiché au démarrage du bot quand une génération à la
+#: demande est câblée (voir `PilotageBot.generate_callback`) — un appui envoie
+#: le texte "/generer", routé comme n'importe quelle commande tapée.
+_GENERATE_KEYBOARD = {
+    "keyboard": [[{"text": "/generer"}]],
+    "resize_keyboard": True,
+    "is_persistent": True,
+}
 
 
 def _truncate(text: str, limit: int) -> str:
@@ -78,6 +88,9 @@ class PilotageBot:
         self.repository = repository
         self._session = session or requests.Session()
         self.logger = logging.getLogger(f"pilotage.bots.{config.platform.value}")
+        #: Câblé par `cli._make_bot()` vers `pipeline.run()` — laissé à `None`
+        #: par le socle pour ne pas coupler `bots` à `pipelines` ici.
+        self.generate_callback: Callable[[], int] | None = None
 
     @property
     def platform(self) -> Platform:
@@ -175,6 +188,11 @@ class PilotageBot:
             )
             return
         self.logger.info("▶ Bot %s en écoute", self.platform.value)
+        if self.generate_callback is not None:
+            self.send_message(
+                "🎬 Bot de pilotage prêt. Appuyez sur le bouton pour générer un nouveau script.",
+                reply_markup=_GENERATE_KEYBOARD,
+            )
         while True:
             self.poll_once()
 
@@ -207,6 +225,7 @@ class PilotageBot:
         commande = commande.split("@")[0]  # /commande@NomDuBot → /commande
 
         routes = {
+            "/generer": lambda: self._cmd_generer(),
             "/en_attente": lambda: self._cmd_en_attente(),
             "/stats": lambda: self._cmd_stats(),
             "/publie": lambda: self._cmd_publie(arguments),
@@ -317,6 +336,24 @@ class PilotageBot:
             )
             self.repository.update_status(item.id, ContentStatus.PENDING_REVIEW)
         return len(drafts)
+
+    def _cmd_generer(self) -> None:
+        """Déclenche une génération à la demande (bouton ou `/generer` tapé) :
+        lance le pipeline câblé par `cli._make_bot()`, puis envoie le
+        brouillon obtenu avec son clavier de décision, comme le ferait le
+        déclenchement planifié (`pilotage run <plateforme>`)."""
+        if self.generate_callback is None:
+            self.send_message("Génération à la demande non disponible pour ce bot.")
+            return
+        self.send_message("⏳ Génération d'un nouveau script en cours (jusqu'à une minute)…")
+        try:
+            self.generate_callback()
+        except Exception as exc:  # noqa: BLE001 - ne doit jamais interrompre la boucle du bot
+            self.logger.error("Génération à la demande en échec : %s", exc)
+            self.send_message(f"✖ Génération impossible : {exc}")
+            return
+        if self.notify_pending_drafts() == 0:
+            self.send_message("Génération terminée, mais rien à envoyer (déjà en attente ?).")
 
     def _cmd_en_attente(self) -> None:
         """Reliste ce qui attend déjà une décision (`pending_review`) — pour
