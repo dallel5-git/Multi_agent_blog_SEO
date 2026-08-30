@@ -22,11 +22,11 @@ from __future__ import annotations
 
 import streamlit as st
 
-from ..brand_kernel.loader import load_brand_kernel
-from ..brand_kernel.schema import BrandKernel
-from ..config.settings import PilotageSettings
-from ..shared_calendar.repository import CalendarRepository
-from .views import conversions, kanban, stats
+from pilotage.brand_kernel.loader import load_brand_kernel
+from pilotage.brand_kernel.schema import BrandKernel
+from pilotage.config.settings import PilotageSettings
+from pilotage.dashboard.views import conversions, kanban, stats
+from pilotage.shared_calendar.repository import CalendarRepository
 
 st.set_page_config(page_title="Pilotage — tableau de bord", page_icon="📊", layout="wide")
 
