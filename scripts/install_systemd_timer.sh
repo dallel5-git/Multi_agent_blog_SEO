@@ -39,7 +39,7 @@ mkdir -p "$UNIT_DIR"
 cat > "$UNIT_DIR/$SERVICE" <<UNIT
 [Unit]
 Description=blogseo — génération d'un article de blog SEO
-Documentation=file://$PROJECT_DIR/README.md
+Documentation=file://${PROJECT_DIR// /%%20}/README.md
 After=network-online.target
 Wants=network-online.target
 
@@ -52,7 +52,7 @@ ExecStart="$PYTHON" -c "from blogseo.interfaces.scheduler import run_once; run_o
 TimeoutStartSec=90000
 StandardOutput=journal
 StandardError=journal
-Environment=PYTHONPATH=$PROJECT_DIR/src
+Environment="PYTHONPATH=$PROJECT_DIR/src"
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
@@ -62,7 +62,7 @@ UNIT
 cat > "$UNIT_DIR/$TIMER" <<UNIT
 [Unit]
 Description=Déclenche blogseo toutes les 48 heures
-Documentation=file://$PROJECT_DIR/README.md
+Documentation=file://${PROJECT_DIR// /%%20}/README.md
 
 [Timer]
 # Premier déclenchement 10 minutes après le démarrage de la session,
