@@ -47,7 +47,7 @@ Wants=network-online.target
 Type=oneshot
 WorkingDirectory=$PROJECT_DIR
 EnvironmentFile=-$PROJECT_DIR/.env
-ExecStart=$PYTHON -c "from blogseo.interfaces.scheduler import run_once; run_once()"
+ExecStart="$PYTHON" -c "from blogseo.interfaces.scheduler import run_once; run_once()"
 # Le pipeline attend la validation Telegram : jusqu'à 24 h + marge.
 TimeoutStartSec=90000
 StandardOutput=journal
