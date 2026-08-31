@@ -66,7 +66,7 @@ dans `storage/drafts/`, même si Telegram ou Git tombent.
 
 ## 2. Installation
 
-**Prérequis :** Python 3.10 ou plus (3.10.12 d'Ubuntu 22.04 convient), Git.
+**Prérequis :** Python 3.11 ou plus, Git.
 
 ```bash
 cd "/home/oussama/Bureau/Chaine_youtube_Oussama_Dallel/Blog IA/blog-seo-agents"
@@ -298,6 +298,24 @@ systemctl --user stop    blogseo.timer     # mettre en pause
 
 Équivalents `make` : `check`, `offline`, `dry-run`, `run`, `index`, `graph`,
 `runs`, `dashboard`, `scheduler`, `test`, `lint`.
+
+### Pilotage multi-plateformes
+
+Le paquet `pilotage` gère séparément YouTube, TikTok, Instagram, X, Facebook
+et un canal Telegram public. Il ne remplace pas le pipeline blog.
+
+```bash
+pilotage check                 # état des clés, bots et calendrier
+pilotage migrate               # crée la base SQLite locale
+pilotage sync-blog             # importe les articles blog déjà publiés
+pilotage run youtube --offline # essai sans réseau ni clé
+pilotage run youtube           # crée un brouillon pour validation Telegram
+make offline-pilotage          # tests E2E hors ligne du pilotage
+make dashboard-pilotage        # tableau de bord Streamlit local
+```
+
+La première mise en service demande les clés des bots et des plateformes ; la
+liste exacte est dans [`CADRAGE.md`](CADRAGE.md).
 
 **Mode série** (`blogseo series start`) : planifie 3 à 5 articles liés en une
 seule fois, puis chaque `blogseo run` normal (manuel ou via le scheduler 48h)

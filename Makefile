@@ -49,7 +49,7 @@ graph: ## Affiche le diagramme du pipeline
 dashboard: ## Génère le tableau de bord HTML local et l'ouvre dans le navigateur
 	$(BIN)/blogseo dashboard --open
 
-scheduler: ## Démarre le planificateur local (toutes les 48 h)
+scheduler: ## Démarre le planificateur local (hebdomadaire / chaque semaine)
 	$(BIN)/python -m blogseo.interfaces.scheduler
 
 dashboard-pilotage: ## Tableau de bord Streamlit du pilotage (lecture seule)

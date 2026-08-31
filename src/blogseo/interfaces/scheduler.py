@@ -1,4 +1,4 @@
-"""Planificateur local : un article tous les 2 jours.
+"""Planificateur local : un article chaque semaine (tous les 7 jours).
 
 ## Pourquoi APScheduler et pas GitHub Actions ?
 
@@ -37,8 +37,8 @@ from ..infrastructure.config.settings import Settings
 
 logger = logging.getLogger(__name__)
 
-#: Intervalle demandé : un article tous les 2 jours.
-INTERVAL_HOURS = 48
+#: Intervalle demandé : un article chaque semaine (7 jours = 168 heures).
+INTERVAL_HOURS = 168
 #: Heure de déclenchement (fuseau local de la machine).
 DEFAULT_HOUR = 9
 DEFAULT_MINUTE = 0
@@ -90,15 +90,15 @@ def start(*, dry_run: bool = False, run_immediately: bool = False) -> int:
         trigger=IntervalTrigger(hours=INTERVAL_HOURS, start_date=first_run),
         kwargs={"dry_run": dry_run},
         id="blogseo_pipeline",
-        name="Génération d'article tous les 2 jours",
+        name="Génération d'article chaque semaine (7 jours)",
         max_instances=1,       # jamais deux pipelines en parallèle
         coalesce=True,         # une seule exécution si des déclenchements ont été manqués
         misfire_grace_time=3600,
     )
 
     logger.info(
-        "Planificateur démarré — prochain run le %s, puis toutes les %s h%s",
-        first_run.strftime("%d/%m/%Y à %H:%M"), INTERVAL_HOURS,
+        "Planificateur démarré — prochain run le %s, puis toutes les %s h (%s jours)%s",
+        first_run.strftime("%d/%m/%Y à %H:%M"), INTERVAL_HOURS, INTERVAL_HOURS // 24,
         " (mode dry-run)" if dry_run else "",
     )
 
@@ -118,21 +118,21 @@ def _naive_loop(*, dry_run: bool, run_immediately: bool) -> int:
     """Repli sans APScheduler : boucle `sleep` toute simple."""
     interval_s = INTERVAL_HOURS * 3600
     if not run_immediately:
-        logger.info("Première exécution dans %s h", INTERVAL_HOURS)
+        logger.info("Première exécution dans %s h (%s jours)", INTERVAL_HOURS, INTERVAL_HOURS // 24)
         time.sleep(interval_s)
     while True:
         try:
             run_once(dry_run=dry_run)
         except Exception:  # noqa: BLE001 - le planificateur ne doit jamais mourir
             logger.exception("Run planifié en échec — nouvelle tentative au prochain cycle")
-        logger.info("Prochain run dans %s h", INTERVAL_HOURS)
+        logger.info("Prochain run dans %s h (%s jours)", INTERVAL_HOURS, INTERVAL_HOURS // 24)
         time.sleep(interval_s)
 
 
 if __name__ == "__main__":  # pragma: no cover
     import argparse
 
-    parser = argparse.ArgumentParser(description="Planificateur local du pipeline (toutes les 48 h)")
+    parser = argparse.ArgumentParser(description="Planificateur local du pipeline (hebdomadaire / chaque semaine)")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--now", action="store_true", help="Déclenche un premier run immédiatement")
     parsed = parser.parse_args()

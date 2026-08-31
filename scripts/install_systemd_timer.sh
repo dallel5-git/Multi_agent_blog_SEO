@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  Installe le pipeline comme service utilisateur systemd, déclenché toutes les
-#  48 h. Aucun droit root nécessaire.
+#  Installe le pipeline comme service utilisateur systemd, déclenché chaque
+#  semaine (7 jours). Aucun droit root nécessaire.
 #
 #  Usage :  ./scripts/install_systemd_timer.sh
 #  Désinstaller :  ./scripts/install_systemd_timer.sh --uninstall
@@ -61,14 +61,14 @@ UNIT
 
 cat > "$UNIT_DIR/$TIMER" <<UNIT
 [Unit]
-Description=Déclenche blogseo toutes les 48 heures
+Description=Déclenche blogseo chaque semaine (7 jours)
 Documentation=file://${PROJECT_DIR// /%%20}/README.md
 
 [Timer]
 # Premier déclenchement 10 minutes après le démarrage de la session,
-# puis toutes les 48 heures.
+# puis chaque semaine (7 jours).
 OnBootSec=10min
-OnUnitActiveSec=48h
+OnUnitActiveSec=7d
 # Rattrape un déclenchement manqué si la machine était éteinte.
 Persistent=true
 # Décalage aléatoire pour ne pas taper les API à la seconde près.

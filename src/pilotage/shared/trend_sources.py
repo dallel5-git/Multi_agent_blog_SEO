@@ -28,7 +28,7 @@ _USER_AGENT = "pilotage/1.0 (+https://github.com/dallel5-git/Multi_agent_blog_SE
 # Mêmes mots-clés que `blogseo.infrastructure.sources.hackernews` : on ne
 # garde que ce qui recoupe la niche IA/automatisation/productivité.
 _RELEVANT_TERMS = (
-    "ai", "llm", "gpt", "agent", "automation", "workflow", "n8n", "make.com",
+    "ai", "llm", "gpt", "agent", "automation", "workflow", "n8n", "make", "make.com",
     "python", "rag", "prompt", "openai", "gemini", "claude", "langchain",
     "no-code", "nocode", "self-host", "vector", "embedding", "mcp", "copilot",
 )
@@ -43,7 +43,7 @@ _RELEVANT_PATTERN = re.compile(
 )
 
 _REDDIT_SUBREDDITS = ("artificial", "LocalLLaMA", "n8n", "automation", "AI_Agents")
-_DEVTO_TAGS = ("ai", "automation", "python")
+_DEVTO_TAGS = ("ai", "automation", "n8n", "make", "python")
 _TUNISIA_RSS_FEEDS = (
     "https://www.tekiano.com/feed/",
     "https://www.leconomistemaghrebin.com/tag/startup/feed/",

@@ -141,7 +141,7 @@ def cmd_check(container: Container) -> int:
         ("ddgs", "recherche DuckDuckGo"),
         ("pytrends", "Google Trends"),
         ("PIL", "image de couverture de secours"),
-        ("apscheduler", "planification locale toutes les 48 h"),
+        ("apscheduler", "planification locale hebdomadaire"),
     ]:
         try:
             __import__(module)

@@ -11,7 +11,7 @@
 > | | |
 > |---|---|
 > | **Date** | 2026-08-23 |
-> | **Statut** | Cadrage validé, squelette livré, développement non commencé |
+> | **Statut** | Développement livré ; mise en service et configurations externes restantes |
 > | **Dépôt** | https://github.com/dallel5-git/Multi_agent_blog_SEO |
 
 ---
@@ -78,8 +78,9 @@ ou fait partie de la bibliothèque standard.
 
 ## 3. Découpage en lots
 
-Ordre de dépendance stricte : chaque lot ne peut commencer que lorsque le
-précédent est testé. Le lot 0 est déjà livré.
+Les lots 0 à 7 sont livrés et couverts par des tests unitaires et E2E hors
+ligne. L'ordre ci-dessous reste utile pour comprendre les dépendances et pour
+mettre le système en service progressivement.
 
 ```mermaid
 flowchart LR
@@ -91,7 +92,8 @@ flowchart LR
     L4 --> L5
     L5 --> L6["Lot 6<br/>Dashboard"]
     L6 --> L7["Lot 7<br/>Tests E2E"]
-    style L0 fill:#0e8a16,stroke:#0a6410,color:#fff
+    classDef delivered fill:#0e8a16,stroke:#0a6410,color:#fff
+    class L0,L1,L2,L3,L4,L5,L6,L7 delivered
 ```
 
 ### Lot 0 — Cadrage et squelette ✅ *livré*
@@ -100,53 +102,57 @@ Analyse de l'existant, arborescence `src/pilotage/`, `brand_kernel.yaml`,
 `schema.sql`, `.env.example` étendu, `ARCHITECTURE.md`, ce document, et les
 tests de non-régression du squelette.
 
-### Lot 1 — Brand Kernel
+### Lot 1 — Brand Kernel ✅ *livré*
 
 Le premier parce que tout le reste en dépend. Dataclasses miroir du YAML,
 `load_brand_kernel()` avec cache, **refus de démarrer s'il reste un `TODO`**,
 et `render_prompt_block()` qui produit le bloc injecté en tête des prompts.
 
-*Bloqué par :* les valeurs d'identité que l'auteur doit fournir (§5, décisions 1 et 2).
+Les valeurs de marque actuellement retenues sont dans
+`src/pilotage/brand_kernel/brand_kernel.yaml`. Le chargeur refuse toujours un
+fichier qui contiendrait une valeur `TODO`.
 
-### Lot 2 — Base de données partagée
+### Lot 2 — Base de données partagée ✅ *livré*
 
 `migrate.py` applique `schema.sql`. `models.py` définit les entités et l'énum
 `ContentStatus`. `repository.py` concentre **tout** le SQL. `config/settings.py`
 lit l'environnement. Plus le pont lecture seule qui verse les articles publiés
 du blog dans `content_items`.
 
-### Lot 3 — Les 6 pipelines de contenu
+### Lot 3 — Les 6 pipelines de contenu ✅ *livré*
 
 `pipelines/base.py` d'abord, puis **un pipeline complet de bout en bout comme
 pilote** avant de dupliquer sur les cinq autres. Recommandation : YouTube en
 premier — c'est la plateforme avec des stats automatiques, la meilleure boucle
 de rétroaction pour valider le modèle.
 
-*Chaque pipeline = une issue distincte, testable seule.*
+Les six pipelines sont testables individuellement. La recommandation de
+mise en service reste YouTube en premier, puis une seconde plateforme.
 
-### Lot 4 — Les 6 bots Telegram de pilotage
+### Lot 4 — Les 6 bots Telegram de pilotage ✅ *livré*
 
 `bots/base.py` (long-polling, offset persisté, clavier inline, garde sur le
 `chat_id` autorisé), puis un bot par plateforme : `/en_attente`, `/stats`,
 `/publie [lien]`, boutons ✅ ✏️ ❌.
 
-### Lot 5 — Agent Collecteur de Statistiques
+### Lot 5 — Agent Collecteur de Statistiques ✅ *livré*
 
 Port commun, puis les adapters : YouTube, Meta (Facebook + Instagram),
 Telegram, et la saisie manuelle guidée pour X et TikTok.
 
-*Bloqué par :* la mise en place administrative Meta (§4, risque 3).
+Les adapters sont prêts ; leur exécution dépend seulement des identifiants
+YouTube, Meta et Telegram renseignés dans `.env`.
 
-### Lot 6 — Tableau de bord Streamlit
+### Lot 6 — Tableau de bord Streamlit ✅ *livré*
 
 Kanban par plateforme, statistiques dans le temps, suivi des conversions.
 Lecture seule : le tableau de bord n'écrit jamais en base.
 
-### Lot 7 — Tests bout-en-bout
+### Lot 7 — Tests bout-en-bout ✅ *livré*
 
 Un run complet d'un pipeline en mode hors ligne, du sujet au brouillon
-enregistré en base, sans réseau ni clé — sur le modèle du `make offline`
-existant, qui est aujourd'hui le meilleur filet du projet.
+enregistré en base, sans réseau ni clé, ainsi qu'une simulation des échanges
+bot sont disponibles via `make offline-pilotage`.
 
 ---
 
@@ -238,28 +244,22 @@ Brand Kernel, schéma SQL applicable). Toute dérive fait échouer `make test`.
 
 > À trancher dans l'ordre. Les six premières bloquent le lot 1.
 
-- [ ] **1. Identité visuelle** — les cinq couleurs (primaire, secondaire,
-      accent, fond, texte) en hexadécimal, le chemin du logo, et les deux
-      polices (titre et corps, libres de droits). *Bloque le lot 1.*
+- [x] **1. Identité visuelle** — couleurs, wordmark et polices sont renseignés
+      dans le Brand Kernel.
 
-- [ ] **2. Ton de voix** — trois à cinq adjectifs, **tutoiement ou
-      vouvoiement** (à figer une fois pour les six plateformes), formules
-      signature, politique emoji. *Bloque le lot 1.*
+- [x] **2. Ton de voix** — ton, tutoiement, phrase signature et politique emoji
+      sont renseignés dans le Brand Kernel.
 
-- [ ] **3. Baseline** — la phrase de 10-15 mots des bios de profil, distincte
-      du slogan « Prenez le contrôle de votre temps grâce à l'IA ». *Bloque le lot 1.*
+- [x] **3. Baseline** — renseignée dans le Brand Kernel.
 
-- [ ] **4. Comptes et handles** — les URL réelles des comptes TikTok,
-      Instagram, X, Facebook et du canal Telegram. Certains n'existent
-      peut-être pas encore : les créer fait partie du lot 1. *Bloque le lot 1.*
+- [ ] **4. Canal Telegram public** — les comptes YouTube, TikTok, Instagram,
+      X et Facebook sont renseignés ; confirmer l'URL ou le `@username` du
+      canal Telegram public.
 
-- [ ] **5. Offres d'affiliation** — les programmes n8n et Make sont-ils déjà
-      souscrits ? Liens d'affiliation réels, commissions, appels à l'action.
-      Y a-t-il un produit digital propre à vendre dès maintenant ? *Bloque le lot 1.*
+- [x] **5. Offres d'affiliation** — Make est actif ; n8n et les produits propres
+      restent volontairement désactivés jusqu'à ce qu'un lien soit disponible.
 
-- [ ] **6. Paramètre de suivi des liens** — schéma exact du paramètre par
-      plateforme (par exemple `?ref=od-youtube`), sans quoi l'onglet
-      Conversions ne pourra rien ventiler. *Bloque le lot 1.*
+- [x] **6. Paramètre de suivi des liens** — schéma retenu : `?ref=od-{platform}`.
 
 - [ ] **7. Noms exacts des 6 bots** — les `@handles` BotFather, à réserver tant
       qu'ils sont libres. Suggestion cohérente : `@od_pilot_youtube_bot`,
@@ -291,19 +291,19 @@ Brand Kernel, schéma SQL applicable). Toute dérive fait échouer `make test`.
 
 ---
 
-## 6. Ce qui a été livré dans le lot 0
+## 6. Fondations livrées au lot 0
 
 | Fichier | Contenu |
 |---|---|
 | `ARCHITECTURE.md` | Arborescence, schémas Mermaid, règle d'isolation, conventions |
 | `CADRAGE.md` | Ce document |
-| `src/pilotage/` | 63 fichiers de squelette, docstrings uniquement |
+| `src/pilotage/` | fondations du paquet ; la logique des lots 1 à 7 est désormais implémentée |
 | `src/pilotage/platforms.py` | Énum `Platform` — la seule constante partagée |
-| `src/pilotage/brand_kernel/brand_kernel.yaml` | Structure complète, valeurs en `TODO` explicites |
+| `src/pilotage/brand_kernel/brand_kernel.yaml` | Structure complète, valeurs de marque actuellement retenues |
 | `src/pilotage/shared_calendar/schema.sql` | 3 tables, 1 vue, contraintes `CHECK` et clés étrangères |
 | `.env.example` | Sections 11 à 14 : 6 bots, YouTube, Meta, base, dashboard |
-| `tests/unit/test_pilotage_scaffolding.py` | Verrouillage de l'ossature |
+| `tests/unit/test_pilotage_scaffolding.py` | Verrouillage de l'ossature et de l'isolation des paquets |
 
-**Aucune logique métier** : pas d'appel LLM, pas d'appel Telegram, pas de
-requête SQL en dehors de la création du schéma. Le code existant de `blogseo`
-n'a pas été modifié d'une ligne.
+Les implémentations ultérieures ont ajouté la logique métier dans `pilotage`
+sans créer de dépendance de `blogseo` vers ce paquet. Les appels réels restent
+désactivés tant que leurs identifiants ne sont pas renseignés dans `.env`.

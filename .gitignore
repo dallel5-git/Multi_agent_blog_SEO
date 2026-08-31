@@ -31,6 +31,7 @@ storage/rate_limits/
 storage/analytics/
 storage/telegram_offset.json
 storage/dashboard.html
+storage/pilotage/
 
 # Modèles téléchargés
 .cache/

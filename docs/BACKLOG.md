@@ -2,6 +2,12 @@
 
 > Dépôt : https://github.com/dallel5-git/Multi_agent_blog_SEO
 >
+> **Note de statut (août 2026).** Ce document est l'historique du backlog
+> initial. Les issues #31 à #36 ont depuis été implémentées (Search Console,
+> sources tunisiennes, dashboards, Social Writer, séries et régénération).
+> Pour le travail restant du pilotage multi-plateformes et sa mise en service,
+> consulter [`../CADRAGE.md`](../CADRAGE.md).
+>
 > Ce backlog est découpé en **8 epics** et **32 issues**. Les issues marquées
 > ✅ correspondent au périmètre déjà livré en v1.0.0 : elles sont créées puis
 > fermées immédiatement par le script, pour que l'historique du dépôt reflète

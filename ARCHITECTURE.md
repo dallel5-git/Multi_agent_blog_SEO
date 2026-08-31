@@ -276,12 +276,15 @@ bibliothèque standard. La contrainte « jamais de carte bancaire » est tenue.
 
 ---
 
-## 8. Ce que ce squelette ne fait pas encore
+## 8. État de l'implémentation et mise en service
 
-Aucun module de `src/pilotage/` ne contient de logique métier : pas d'appel
-LLM, pas d'appel Telegram, pas de requête SQL en dehors de la création du
-schéma. Chaque fichier porte un docstring décrivant son rôle futur et le lot
-qui l'implémentera.
+Les lots 1 à 7 sont implémentés : chargement du Brand Kernel, calendrier
+SQLite et pont blog en lecture seule, six pipelines indépendants, six bots
+Telegram, collecte de statistiques, dashboard Streamlit et tests E2E hors
+ligne. Les commandes sont exposées par `pilotage` : `migrate`, `check`,
+`sync-blog`, `run`, `bot`, `remind-stats` et `collect-stats`.
 
-Le découpage en lots, les risques et la liste des décisions à figer sont dans
-[`CADRAGE.md`](CADRAGE.md).
+La logique est prête, mais les appels réels dépendent des comptes et clés
+externes dans `.env` : bots Telegram par plateforme, API YouTube, Meta et
+canal Telegram. Le chemin de mise en service et les décisions encore attendues
+sont tenus à jour dans [`CADRAGE.md`](CADRAGE.md).

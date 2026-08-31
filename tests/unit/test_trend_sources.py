@@ -23,6 +23,10 @@ def test_is_relevant_matche_les_termes_a_tiret_comme_mots_entiers():
     assert _is_relevant("Le mouvement no-code explose en 2026") is True
 
 
+def test_is_relevant_matche_make_et_les_agents_ia():
+    assert _is_relevant("Make automatise le travail des agents IA") is True
+
+
 def test_is_relevant_matche_dans_lurl_si_absent_du_titre():
     assert _is_relevant("Un nouvel outil sorti cette semaine", "https://exemple.test/n8n-guide") is True
 
