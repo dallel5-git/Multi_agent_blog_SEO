@@ -1,6 +1,6 @@
 # blogseo-agents
 
-**Système multi-agents qui rédige, relit, optimise et publie un article de blog SEO tous les 2 jours — pour 0 dinar.**
+**Système multi-agents qui rédige, relit, optimise et publie un article de blog SEO chaque semaine — pour 0 dinar.**
 
 Neuf agents orchestrés par LangGraph font la veille technologique mondiale et
 tunisienne, choisissent un sujet non redondant, rédigent l'article en français,
@@ -20,7 +20,7 @@ toute publication.
 3. [Configuration des clés](#3-configuration-des-clés-gratuites)
 4. [Premier lancement](#4-premier-lancement-sans-risque)
 5. [Le bot Telegram](#5-le-bot-telegram--votre-bouton-de-publication)
-6. [Automatiser tous les 2 jours](#6-automatiser-tous-les-2-jours)
+6. [Automatiser chaque semaine](#6-automatiser-chaque-semaine)
 7. [Toutes les commandes](#7-toutes-les-commandes)
 8. [Architecture](#8-architecture)
 9. [Coût](#9-coût--0-)
@@ -238,7 +238,7 @@ le fichier est écrit en local, rien n'est poussé. C'est le choix sûr.
 
 ---
 
-## 6. Automatiser tous les 2 jours
+## 6. Automatiser chaque semaine
 
 ### Pourquoi en local et pas sur GitHub Actions ?
 
@@ -260,8 +260,8 @@ python -m blogseo.interfaces.scheduler --now
 ./scripts/install_systemd_timer.sh
 ```
 
-Le script installe un service utilisateur et un timer qui se déclenche toutes les
-48 h, survit au redémarrage, et écrit ses logs dans `journalctl`.
+Le script installe un service utilisateur et un timer qui se déclenche chaque
+semaine (7 jours), survit au redémarrage, et écrit ses logs dans `journalctl`.
 
 ```bash
 systemctl --user status  blogseo.timer     # état
@@ -318,7 +318,7 @@ La première mise en service demande les clés des bots et des plateformes ; la
 liste exacte est dans [`CADRAGE.md`](CADRAGE.md).
 
 **Mode série** (`blogseo series start`) : planifie 3 à 5 articles liés en une
-seule fois, puis chaque `blogseo run` normal (manuel ou via le scheduler 48h)
+seule fois, puis chaque `blogseo run` normal (manuel ou via le scheduler hebdomadaire)
 consomme automatiquement le prochain sujet de la série active — aucun flag
 supplémentaire à ajouter à `run`. Chaque article publié lie les précédents de
 la série et, une fois réellement poussé sur Git, met à jour les articles déjà
@@ -397,7 +397,7 @@ Aucun autre fichier à toucher.
 
 **Consommation par run :** 7 à 9 appels LLM en cas nominal (jusqu'à 13 avec deux
 révisions) — largement sous les quotas gratuits de la chaîne pour un run
-toutes les 48 h.
+chaque semaine.
 
 Aucun SDK ni appel vers un service payant n'est présent dans le code — ni en
 option, ni en commentaire.

@@ -155,7 +155,7 @@ Ces deux arêtes conditionnelles sont déclarées dans
 
 Une invocation normale du pipeline produit un article isolé. Le mode série
 permet de planifier 3 à 5 articles liés autour d'un même thème, publiés un par
-un au fil des runs normaux (`blogseo run`, y compris via le scheduler 48h),
+un au fil des runs normaux (`blogseo run`, y compris via le scheduler hebdomadaire),
 sans toucher à la topologie du graphe :
 
 ```

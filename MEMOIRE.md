@@ -14,7 +14,7 @@
 | | |
 |---|---|
 | **Nom** | `blogseo-agents` |
-| **Objet** | Générer automatiquement, tous les 2 jours, un article de blog optimisé SEO |
+| **Objet** | Générer automatiquement, chaque semaine (7 jours), un article de blog optimisé SEO |
 | **Propriétaire** | Oussama Dallel |
 | **Dépôt** | https://github.com/dallel5-git/Multi_agent_blog_SEO |
 | **Emplacement local** | `/home/oussama/Bureau/Chaine_youtube_Oussama_Dallel/Blog IA/blog-seo-agents` |
@@ -250,7 +250,7 @@ sans télécharger 90 Mo de modèle.
 - **Retry avec backoff exponentiel + jitter** sur tous les appels réseau.
 - **Consommation observée par run** : ~7 à 9 appels LLM en cas nominal, jusqu'à
   ~13 avec deux révisions. Très largement sous le quota Gemini gratuit
-  (1500/jour) pour un run toutes les 48 h.
+  (1500/jour) pour un run chaque semaine.
 
 ---
 
@@ -304,7 +304,7 @@ make dry-run          # run complet avec vrais LLM, sans rien publier
 make run              # run complet avec validation Telegram
 make test             # tests unitaires
 make graph            # diagramme Mermaid du pipeline
-make scheduler        # démarre la planification toutes les 48 h
+make scheduler        # démarre la planification hebdomadaire (chaque semaine)
 blogseo runs          # historique des runs
 blogseo show <run_id> # détail d'un run
 blogseo series start "<thème>" --size 4   # planifie une série de 3 à 5 articles liés
@@ -327,7 +327,7 @@ blogseo series show <series_id>           # détail d'une série
 - [x] Publication Git conditionnelle (✅ push / ❌ local)
 - [x] Génération de couverture Pollinations + image de secours Pillow
 - [x] Mode `--dry-run` et mode `--offline`
-- [x] Planificateur local 48 h + unité systemd
+- [x] Planificateur local hebdomadaire + unité systemd
 - [x] Suite de tests unitaires complète (Quality Gate, anti-doublon, SEO, fallback LLM, routage, Publisher, série)
 - [x] CLI complète (`run`, `check`, `index`, `graph`, `runs`, `show`, `dashboard`, `series`)
 - [x] Google Search Console branché sur `AnalyticsPort`

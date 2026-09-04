@@ -478,7 +478,7 @@
     <li><b>Rate limiter à double fenêtre</b> (minute + jour) qui bloque <em>avant</em> l'appel plutôt que d'encaisser un 429. L'état journalier est persisté sur disque : redémarrer le process ne remet pas le compteur à zéro.</li>
     <li><b>Bascule Gemini → Groq</b> : sur 429, bascule immédiate et Gemini est écarté pour le reste du run. Sur panne réseau, bascule aussi mais Gemini est retenté au coup suivant.</li>
     <li><b>Retry avec backoff exponentiel et jitter</b> sur tous les appels réseau.</li>
-    <li><b>7 à 9 appels LLM par run</b> (jusqu'à 13 avec deux révisions), soit ~0,6 % du quota Gemini gratuit pour un run toutes les 48 h.</li>
+    <li><b>7 à 9 appels LLM par run</b> (jusqu'à 13 avec deux révisions), soit ~0,6 % du quota Gemini gratuit pour un run chaque semaine.</li>
   </ul>
 
   <h3>Où sont les fichiers</h3>
@@ -500,7 +500,7 @@ Blog IA/oussama-blog/
 <!-- ══════════════════ PANNES ══════════════════ -->
 <section id="pannes" hidden>
   <h2>Modes dégradés — que se passe-t-il quand ça casse ?</h2>
-  <p class="sub">Le pipeline tourne sans surveillance toutes les 48 h. Chaque panne a donc un comportement défini et testé. <strong>Invariant absolu : un brouillon est écrit dans <code>storage/drafts/</code> avant toute décision.</strong> Le travail n'est jamais perdu.</p>
+  <p class="sub">Le pipeline tourne sans surveillance chaque semaine. Chaque panne a donc un comportement défini et testé. <strong>Invariant absolu : un brouillon est écrit dans <code>storage/drafts/</code> avant toute décision.</strong> Le travail n'est jamais perdu.</p>
 
   <div class="scroll"><table>
     <thead><tr><th>Panne</th><th>Comportement</th><th>Impact sur le run</th></tr></thead>

@@ -39,7 +39,7 @@ Points complémentaires :
 
 **Négatives**
 - Le pipeline reste bloqué jusqu'à 24 h en attente d'une réponse. Acceptable pour
-  un run toutes les 48 h sur une machine personnelle.
+  un run chaque semaine sur une machine personnelle.
 - Un `getUpdates` concurrent (autre process, webhook) volerait le callback. Documenté
   dans le README.
 

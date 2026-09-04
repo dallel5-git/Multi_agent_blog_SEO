@@ -21,7 +21,7 @@ sentence-transformers>=3.0  # modèle all-MiniLM-L6-v2, ~90 Mo, sans clé
 chromadb>=0.5               # vector store local sur SQLite
 
 # --- Planification -----------------------------------------------------------
-apscheduler>=3.10           # cron local toutes les 48 h
+apscheduler>=3.10           # cron local hebdomadaire (chaque semaine)
 
 # --- Image de couverture -----------------------------------------------------
 Pillow>=10.0                # image de secours si Pollinations.ai est indisponible

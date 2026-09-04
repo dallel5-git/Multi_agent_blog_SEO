@@ -1,6 +1,6 @@
 """Persistance des runs en JSON (un fichier par run) dans `storage/runs/`.
 
-Suffisant pour un pipeline qui tourne une fois toutes les 48 h : pas de base de
+Suffisant pour un pipeline qui tourne une fois par semaine : pas de base de
 données à installer, un fichier lisible à l'œil nu pour le débogage, et la
 validation humaine différée survit à un redémarrage du process.
 """

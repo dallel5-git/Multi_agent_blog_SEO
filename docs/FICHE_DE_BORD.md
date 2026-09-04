@@ -9,7 +9,7 @@ avec validation humaine sur Telegram avant toute publication.
 
 | Élément | Statut |
 |---|---|
-| Blog | ✅ Automatique — un brouillon toutes les 48h |
+| Blog | ✅ Automatique — un brouillon chaque semaine |
 | Bots de pilotage | ✅ 6 / 6 configurés |
 | Stats YouTube | ✅ Clé validée |
 | Stats Meta (Facebook/Instagram) | ⚠️ Jeton validé, Instagram Business ID manquant |
@@ -17,8 +17,8 @@ avec validation humaine sur Telegram avant toute publication.
 
 ## 1. Le blog
 
-Tourne seul depuis l'installation du timer systemd : un brouillon toutes les
-48h, envoyé sur votre bot Telegram de validation. **Rien n'est publié sans
+Tourne seul depuis l'installation du timer systemd : un brouillon chaque
+semaine, envoyé sur votre bot Telegram de validation. **Rien n'est publié sans
 votre clic.**
 
 ### Le cycle de décision Telegram
