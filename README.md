@@ -12,10 +12,10 @@ toute publication.
 > Make, n8n, Python et agents IA, pour un public tunisien.
 
 ---
-<img width="226" height="175" alt="Capture d’écran du 2026-10-04 10-13-12" src="https://github.com/user-attachments/assets/814d2d61-8e65-4c10-af6d-32291f646532" />
-<img width="226" height="175" alt="Capture d’écran du 2026-10-04 10-13-32" src="https://github.com/user-attachments/assets/6077d7a5-8d23-49ab-9439-0e9e06e6082c" />
-<img width="226" height="175" alt="Capture d’écran du 2026-10-04 10-13-46" src="https://github.com/user-attachments/assets/d6683caa-62e5-46b2-a878-f4d8e614872d" />
-<img width="226" height="175" alt="image" src="https://github.com/user-attachments/assets/0cde0596-49f0-4ee6-bd6f-c880a6ab8556" />
+<img width="302" height="235" alt="Capture d’écran du 2026-10-04 10-13-12" src="https://github.com/user-attachments/assets/814d2d61-8e65-4c10-af6d-32291f646532" />
+<img width="302" height="235" alt="Capture d’écran du 2026-10-04 10-13-32" src="https://github.com/user-attachments/assets/6077d7a5-8d23-49ab-9439-0e9e06e6082c" />
+<img width="302" height="235" alt="Capture d’écran du 2026-10-04 10-13-46" src="https://github.com/user-attachments/assets/d6683caa-62e5-46b2-a878-f4d8e614872d" />
+<img width="302" height="235" alt="image" src="https://github.com/user-attachments/assets/0cde0596-49f0-4ee6-bd6f-c880a6ab8556" />
 
 ## Sommaire
 
